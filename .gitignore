@@ -1,2 +1,2 @@
-*./census_downloads 
-*./.venv
+**/census_downloads_2011/
+**/.venv/
