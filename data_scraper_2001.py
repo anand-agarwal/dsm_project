@@ -8,11 +8,11 @@ import urllib3
 # CONFIG
 # -----------------------------
 API_BASE_URL = "https://censusindia.gov.in/nada/index.php/api/"
-SAVE_FOLDER  = "census_downloads_2011"
+SAVE_FOLDER  = "census_downloads_2001"
 PAGE_LIMIT   = 50  # results per API page
 
 # Census year filter — pick one or more: "2011", "2001", "1991"
-CENSUS_YEARS = ["2011"]
+CENSUS_YEARS = ["2001"]
 
 # All target datasets
 TARGET_DATASETS = [
