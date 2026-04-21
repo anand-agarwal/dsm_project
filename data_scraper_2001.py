@@ -9,67 +9,86 @@ import urllib3
 # -----------------------------
 API_BASE_URL = "https://censusindia.gov.in/nada/index.php/api/"
 SAVE_FOLDER  = "census_downloads_2001"
-PAGE_LIMIT   = 50  # results per API page
+PAGE_LIMIT   = 50
 
-# Census year filter — pick one or more: "2011", "2001", "1991"
 CENSUS_YEARS = ["2001"]
 
-# All target datasets
+# ─────────────────────────────────────────────────────────────────────────────
+# TARGET DATASETS
+# ─────────────────────────────────────────────────────────────────────────────
+# These are the ACTUAL table IDs confirmed from a live API run.
+#
+# Subject mapping to your 2011 scraper:
+#
+#  MARITAL STATUS
+#   "C-02"           ≈ 2011 C-02        Marital status by age and sex (all)
+#   "C-03"           ≈ 2011 C-02 (SC)   Marital status by religious community
+#   "C-03 Appendix"  ≈ 2011 C-02 App.   Marital status by religion + age
+#
+#  EDUCATION
+#   "C-08"           ≈ 2011 C-03        Educational level by age and sex
+#   "C-08 Appendix"  ≈ 2011 C-03 App.   Education level graduate and above
+#   "C-09"           (2001-only)         Education level by religious community
+#   "C-10"           (2001-only)         Population attending educational institution
+#   "C-11"           (2001-only)         Institution attendance by completed level
+#   "C-12"           (2001-only)         Ages 5-19 attending by economic activity
+#
+#  AGE STRUCTURE
+#   "C-13"           (2001-only)         Single year age returns
+#   "C-13 Appendix"  (2001-only)         Single year age + literacy
+#   "C-14"           (2001-only)         Five-year age groups
+#
+#  RELIGION × AGE
+#   "C-15"           (2001-only)         Religious community by age group
+#
+# NOTE: (SC)/(ST) variants and worker tables (industrial category,
+# occupation etc.) were not found under C-series in the 2001 NADA system.
+# Use discover() at the bottom to search for them with keywords like
+# "workers", "occupation", "B-" etc.
+# ─────────────────────────────────────────────────────────────────────────────
+
 TARGET_DATASETS = [
+    # Marital status
     "C-02",
-    "C-02 (SC)",
-    "C-02 (ST)",
-    "C-02 Appendix",
-    "C-02 Appendix (SC)",
-    "C-02 Appendix (ST)",
-    "C-03 Appendix",
     "C-03",
-    "C-04",
-    "C-04 (SC)",
-    "C-04 (ST)",
-    "C-05",
-    "C-06",
-    "C-07",
+    "C-03 Appendix",
+
+    # Education
     "C-08",
-    "C-08 (SC)",
-    "C-08 (ST)",
-    "C-08 Appendix (Total)",
-    "C-08 Appendix (SC)",
-    "C-08 Appendix (ST)",
+    "C-08 Appendix",
     "C-09",
+    "C-10",
+    "C-11",
+    "C-12",
+
+    # Age structure
+    "C-13",
+    "C-13 Appendix",
+    "C-14",
+
+    # Religion × age
+    "C-15",
 ]
 
-# -----------------------------
-# FIX 1: Complete SEARCH_KEYWORDS mapping for ALL datasets.
-# The keyword is what we send to the API (broad search).
-# Local filtering (match_table) then picks the exact dataset.
-# Datasets that share a prefix share a keyword → one API call, cached.
-# -----------------------------
+# ─────────────────────────────────────────────────────────────────────────────
+# SEARCH KEYWORDS
+# ─────────────────────────────────────────────────────────────────────────────
 SEARCH_KEYWORDS = {
-    "C-02":                  "C-02",
-    "C-02 (SC)":             "C-02",
-    "C-02 (ST)":             "C-02",
-    "C-02 Appendix":         "C-02 Appendix",
-    "C-02 Appendix (SC)":    "C-02 Appendix",
-    "C-02 Appendix (ST)":    "C-02 Appendix",
-    "C-03":                  "C-03",
-    "C-03 Appendix":         "C-03 Appendix",
-    "C-04":                  "C-04",
-    "C-04 (SC)":             "C-04",
-    "C-04 (ST)":             "C-04",
-    "C-05":                  "C-05",
-    "C-06":                  "C-06",
-    "C-07":                  "C-07",
-    "C-08":                  "C-08",
-    "C-08 (SC)":             "C-08",
-    "C-08 (ST)":             "C-08",
-    "C-08 Appendix (Total)": "C-08 Appendix",
-    "C-08 Appendix (SC)":    "C-08 Appendix",
-    "C-08 Appendix (ST)":    "C-08 Appendix",
-    "C-09":                  "C-09",
+    "C-02":          "C-02",
+    "C-03":          "C-03",
+    "C-03 Appendix": "C-03 Appendix",
+    "C-08":          "C-08",
+    "C-08 Appendix": "C-08 Appendix",
+    "C-09":          "C-09",
+    "C-10":          "C-10",
+    "C-11":          "C-11",
+    "C-12":          "C-12",
+    "C-13":          "C-13",
+    "C-13 Appendix": "C-13 Appendix",
+    "C-14":          "C-14",
+    "C-15":          "C-15",
 }
 
-# Validate at startup that every target has a keyword mapping
 _missing = [d for d in TARGET_DATASETS if d not in SEARCH_KEYWORDS]
 if _missing:
     raise ValueError(f"Missing SEARCH_KEYWORDS entries for: {_missing}")
@@ -98,7 +117,6 @@ os.makedirs(SAVE_FOLDER, exist_ok=True)
 # ─────────────────────────────────────────────
 
 def safe_filename(name: str) -> str:
-    """Strip/replace characters that are invalid in filenames."""
     name = name.strip()
     name = re.sub(r'[\\/*?:"<>|]', "", name)
     name = re.sub(r'\s+', "_", name)
@@ -107,7 +125,8 @@ def safe_filename(name: str) -> str:
 
 
 def build_download_name(dataset_name: str, year: str, state_name: str,
-                         district_name: str, original_filename: str) -> str:
+                         district_name: str, sc: int, st: int,
+                         original_filename: str) -> str:
     ext = ""
     if "." in original_filename:
         ext = "." + original_filename.rsplit(".", 1)[-1]
@@ -116,33 +135,48 @@ def build_download_name(dataset_name: str, year: str, state_name: str,
     if district_name and district_name.strip():
         location += "_" + safe_filename(district_name)
 
+    # Append population group suffix so SC/ST files don't collide with Total
+    if sc:
+        group = "_SC"
+    elif st:
+        group = "_ST"
+    else:
+        group = ""
+
     base      = safe_filename(dataset_name)
     year_part = f"_{year}" if year else ""
-    return f"{base}{year_part}_{location}{ext}"
+    return f"{base}{year_part}_{location}{group}{ext}"
 
 
-# -----------------------------
-# FIX 2: Smarter match_table — avoids "C-08" matching "C-08 Appendix".
-# Strategy: table_id must equal target exactly (case-insensitive),
-# OR the title must contain the full target string bounded by
-# word/punctuation boundaries, not just anywhere as a substring.
-# -----------------------------
 def match_table(table: dict, target: str) -> bool:
+    """
+    Return True if *table* from the API corresponds to *target*.
+
+    Rules (in priority order):
+      1. Exact match on table_id (case-insensitive).
+      2. Exact match after stripping a leading "Table " prefix.
+      3. Title contains target as a whole token.
+
+    City variants (table_id contains 'city') are ALWAYS excluded —
+    we want national/all tables, not city sub-tables.
+    """
     table_id = table.get("table_id", "").strip()
     title    = table.get("title",    "").strip()
 
-    # Exact match on table_id (most reliable)
+    # Never match city-specific sub-tables
+    if "city" in table_id.lower():
+        return False
+
+    # 1. Exact table_id
     if table_id.lower() == target.lower():
         return True
 
-    # Exact match on table_id after stripping leading "Table " prefix
+    # 2. Strip leading "Table " prefix
     bare_id = re.sub(r'^table\s+', '', table_id, flags=re.IGNORECASE).strip()
     if bare_id.lower() == target.lower():
         return True
 
-    # Title must contain the target as a whole "word group":
-    # escape special regex chars in target, then require word boundaries
-    # (or start/end of string / punctuation) around it.
+    # 3. Word-boundary match in title
     escaped = re.escape(target)
     pattern = rf'(?<![A-Za-z0-9]){escaped}(?![A-Za-z0-9])'
     if re.search(pattern, title, re.IGNORECASE):
@@ -157,15 +191,13 @@ def build_api_url(keyword: str, offset: int) -> str:
         f"{PAGE_LIMIT}/{offset}/?ft_query={requests.utils.quote(keyword)}"
     )
     if CENSUS_YEARS:
-        years_param = ",".join(CENSUS_YEARS)
-        base += f"&census_year={years_param}"
+        base += f"&census_year={','.join(CENSUS_YEARS)}"
     return base
 
 
 def fetch_tables_for_keyword(keyword: str) -> list:
     all_tables = []
     offset     = 0
-
     years_display = ", ".join(CENSUS_YEARS) if CENSUS_YEARS else "all years"
     print(f"  🔍 Querying API: keyword={keyword!r}  |  years={years_display}")
 
@@ -182,8 +214,8 @@ def fetch_tables_for_keyword(keyword: str) -> list:
         tables = data.get("data", [])
         found  = data.get("found", 0)
         all_tables.extend(tables)
-
-        print(f"     page offset={offset} → {len(tables)} tables  (total found by API: {found})")
+        print(f"     page offset={offset} → {len(tables)} tables  "
+              f"(total found by API: {found})")
 
         if offset + PAGE_LIMIT >= found or not tables:
             break
@@ -195,10 +227,9 @@ def fetch_tables_for_keyword(keyword: str) -> list:
 
 def get_table_year(table: dict) -> str:
     for series in table.get("series", []):
-        title = series.get("series_title", "")
-        match = re.search(r'\b(19|20)\d{2}\b', title)
-        if match:
-            return match.group(0)
+        m = re.search(r'\b(19|20)\d{2}\b', series.get("series_title", ""))
+        if m:
+            return m.group(0)
     return ""
 
 
@@ -212,6 +243,8 @@ def collect_links_from_table(table: dict) -> list:
                 "url":           link["link"],
                 "state_name":    "All_India",
                 "district_name": "",
+                "sc":            0,
+                "st":            0,
             })
 
     for item in table.get("items", []):
@@ -221,14 +254,15 @@ def collect_links_from_table(table: dict) -> list:
                     "url":           link["link"],
                     "state_name":    item.get("state_name", "").strip(),
                     "district_name": item.get("district_name", "").strip(),
+                    # The API sets sc=1 for Scheduled Castes rows,
+                    # st=1 for Scheduled Tribes rows, both 0 for total.
+                    "sc":            int(item.get("sc", 0) or 0),
+                    "st":            int(item.get("st", 0) or 0),
                 })
 
     return results
 
 
-# -----------------------------
-# FIX 3: Retry logic on download failures.
-# -----------------------------
 def download_file(url: str, dest_path: str, retries: int = 3) -> bool:
     for attempt in range(1, retries + 1):
         try:
@@ -242,8 +276,7 @@ def download_file(url: str, dest_path: str, retries: int = 3) -> bool:
         except Exception as e:
             print(f"    ⚠️  Attempt {attempt}/{retries} failed: {e}")
             if attempt < retries:
-                time.sleep(2 ** attempt)  # exponential back-off: 2s, 4s
-    # Clean up partial file if it exists
+                time.sleep(2 ** attempt)
     if os.path.exists(dest_path):
         os.remove(dest_path)
     print(f"    ❌ Download failed after {retries} attempts.")
@@ -256,16 +289,12 @@ def download_file(url: str, dest_path: str, retries: int = 3) -> bool:
 
 def main():
     print(f"\n{'='*60}")
-    print(f"  Census Table Scraper")
-    if CENSUS_YEARS:
-        print(f"  Year filter : {', '.join(CENSUS_YEARS)}")
-    else:
-        print(f"  Year filter : None (all years)")
+    print(f"  Census Table Scraper — 2001")
+    print(f"  Year filter : {', '.join(CENSUS_YEARS)}")
     print(f"  Save folder : {SAVE_FOLDER}")
     print(f"{'='*60}\n")
 
-    api_cache: dict = {}
-
+    api_cache: dict  = {}
     total_downloaded = 0
     total_skipped    = 0
     total_failed     = 0
@@ -282,20 +311,31 @@ def main():
         else:
             print(f"  ♻️  Using cached results for keyword={keyword!r}")
 
-        tables = api_cache[keyword]
-
-        # FIX 4: Warn when multiple tables match; pick the best (shortest title = least ambiguous).
+        tables  = api_cache[keyword]
         matched = [t for t in tables if match_table(t, dataset_name)]
 
         if not matched:
             print(f"  ❌ No match found for '{dataset_name}'")
+            print(f"     Run discover('{keyword}') to inspect raw API results.")
             continue
 
         if len(matched) > 1:
-            print(f"  ⚠️  {len(matched)} tables matched '{dataset_name}' — picking shortest title:")
-            for m in matched:
-                print(f"       [{m.get('table_id')}] {m.get('title')}")
-            matched = sorted(matched, key=lambda t: len(t.get("title", "")))
+            # Prefer exact table_id match first; fall back to shortest title
+            exact = [
+                t for t in matched
+                if t.get("table_id", "").lower() == dataset_name.lower()
+                or re.sub(r'^table\s+', '', t.get("table_id", ""),
+                          flags=re.IGNORECASE).strip().lower()
+                   == dataset_name.lower()
+            ]
+            if exact:
+                matched = exact
+            else:
+                print(f"  ⚠️  {len(matched)} tables matched '{dataset_name}' "
+                      f"— picking shortest title:")
+                for m in matched:
+                    print(f"       [{m.get('table_id')}] {m.get('title')}")
+                matched = sorted(matched, key=lambda t: len(t.get("title", "")))
 
         table      = matched[0]
         table_year = get_table_year(table)
@@ -320,10 +360,13 @@ def main():
             url           = item["url"]
             state_name    = item["state_name"]
             district_name = item["district_name"]
+            sc            = item["sc"]
+            st            = item["st"]
 
             original_filename = url.split("/")[-1].split("?")[0]
             new_filename = build_download_name(
-                dataset_name, table_year, state_name, district_name, original_filename
+                dataset_name, table_year,
+                state_name, district_name, sc, st, original_filename
             )
             dest_path = os.path.join(dataset_folder, new_filename)
 
@@ -350,5 +393,35 @@ def main():
     print(f"{'='*60}\n")
 
 
+# ─────────────────────────────────────────────
+# DISCOVERY HELPER
+# ─────────────────────────────────────────────
+def discover(keyword: str):
+    """
+    Print every table the API returns for *keyword* in year 2001.
+    Use this to find table IDs not yet in TARGET_DATASETS.
+
+    Suggested searches for missing worker tables:
+        discover("workers")
+        discover("occupation")
+        discover("marginal")
+        discover("B-")
+        discover("industrial")
+    """
+    tables = fetch_tables_for_keyword(keyword)
+    print(f"\nAll API results for keyword={keyword!r}, year=2001:")
+    print(f"  {'table_id':28s}  title")
+    print("-" * 85)
+    for t in tables:
+        city_tag = "  [CITY]" if "city" in t.get("table_id", "").lower() else ""
+        print(f"  {t.get('table_id',''):28s}  {t.get('title','')}{city_tag}")
+
+
 if __name__ == "__main__":
     main()
+
+    # ── Uncomment to search for missing worker/other tables ─────────────────
+    # discover("workers")
+    # discover("occupation")
+    # discover("marginal")
+    # discover("B-")
