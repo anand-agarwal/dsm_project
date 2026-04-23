@@ -37,6 +37,8 @@ TARGET_DATASETS = [
     "C-08 Appendix (SC)",
     "C-08 Appendix (ST)",
     "C-09",
+    "C-12 (SC)",
+    "C-12 (ST)"
 ]
 
 # -----------------------------
@@ -67,6 +69,8 @@ SEARCH_KEYWORDS = {
     "C-08 Appendix (SC)":    "C-08 Appendix",
     "C-08 Appendix (ST)":    "C-08 Appendix",
     "C-09":                  "C-09",
+    "C-12 (SC)":            "C-12 (SC)",
+    "C-12 (ST)":            "C-12 (ST)",
 }
 
 # Validate at startup that every target has a keyword mapping
