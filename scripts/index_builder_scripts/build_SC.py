@@ -49,7 +49,7 @@ PREFIX = 'SC'   # used in every column name produced by this script
 # =============================================================================
 
 C02_COLS = [
-    'table_name', 'state_code', 'district_code', 'area_name', 'area_type',
+    'table_name', 'state_code', 'district_code', 'tehsil_code', 'area_name', 'area_type',
     'age_group',
     'total_p', 'total_m', 'total_f',
     'never_married_p', 'never_married_m', 'never_married_f',
@@ -66,7 +66,7 @@ def _parse_c02(filepath: str) -> pd.DataFrame:
     raw.columns = C02_COLS
     for col in ['district_code', 'area_type', 'age_group', 'area_name', 'state_code']:
         raw[col] = raw[col].astype(str).str.strip()
-    for c in C02_COLS[6:]:
+    for c in C02_COLS[7:]:
         raw[c] = pd.to_numeric(raw[c], errors='coerce').fillna(0)
     # Drop 'All ages' total row and 'Age not stated' rows — these must not
     # be summed into bracket numerators or denominators.
@@ -130,7 +130,7 @@ def build_c02_indexes(dataset_key: str = 'C-02-SC') -> pd.DataFrame:
 # =============================================================================
 
 C08_COLS = [
-    'table_name', 'state_code', 'district_code', 'area_name', 'area_type',
+    'table_name', 'state_code', 'district_code', 'tehsil_code', 'area_name', 'area_type',
     'age_group',
     'total_p', 'total_m', 'total_f',
     'illiterate_p', 'illiterate_m', 'illiterate_f',
@@ -148,7 +148,7 @@ C08_COLS = [
 ]
 
 # Numeric columns that _sum_bracket will aggregate across individual-year rows
-C08_VALUE_COLS = C08_COLS[6:]
+C08_VALUE_COLS = C08_COLS[7:]
 
 
 def _parse_c08(filepath: str) -> pd.DataFrame:
@@ -230,7 +230,7 @@ def build_c08_indexes(dataset_key: str = 'C-08-SC') -> pd.DataFrame:
 # =============================================================================
 
 C12_COLS = [
-    'table_name', 'state_code', 'district_code', 'area_name', 'area_type',
+    'table_name', 'state_code', 'district_code', 'tehsil_code', 'area_name', 'area_type',
     'age_group',
     'total_p', 'total_m', 'total_f',
     'att_main_p',   'att_main_m',   'att_main_f',
@@ -243,7 +243,7 @@ C12_COLS = [
     'natt_nonw_p',   'natt_nonw_m',   'natt_nonw_f',
 ]
 
-C12_VALUE_COLS = C12_COLS[6:]
+C12_VALUE_COLS = C12_COLS[7:]
 
 
 def _parse_c12(filepath: str) -> pd.DataFrame:

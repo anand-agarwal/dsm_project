@@ -83,7 +83,7 @@ _SKIP_C09 = {'all religious communities', 'nan', '', 'total'}
 # In build_religion.py
 
 C05_COLS = [
-    'table_name', 'state_code', 'district_code', 'area_type', 'area_name',  # FIXED: swapped area_type ↔ area_name
+    'table_name', 'state_code', 'district_code', 'tehsil_code', 'area_name',  # FIXED: swapped area_type ↔ area_name
     'religion', 'age_at_marriage',
     'ever_married_m', 'ever_married_f',
     'curr_m_all', 'curr_f_all',
@@ -110,7 +110,7 @@ def _parse_c05(filepath: str) -> pd.DataFrame:
     raw['religion']        = raw['religion'].str.lower()
     raw['age_at_marriage'] = raw['age_at_marriage'].str.lower()
     raw = raw[~raw['age_at_marriage'].isin({e.lower() for e in EXCLUDE_AGES})]
-    for c in C05_COLS[7:]:
+    for c in C05_COLS[8:]:
         raw[c] = pd.to_numeric(raw[c], errors='coerce').fillna(0)
     return raw.reset_index(drop=True)
 
@@ -194,7 +194,7 @@ def build_c05_indexes(dataset_key: str = 'C-05') -> pd.DataFrame:
 # =============================================================================
 
 C09_COLS = [
-    'table_name', 'state_code', 'area_type', 'area_name',
+    'table_name', 'state_code', 'district_code', 'tehsil_code', 'area_name', 'area_type',
     'religion', 'age_group',
     'total_p', 'total_m', 'total_f',
     'illiterate_p', 'illiterate_m', 'illiterate_f',
@@ -210,7 +210,7 @@ C09_COLS = [
     'graduate_p', 'graduate_m', 'graduate_f',
 ]
 
-C09_VALUE_COLS = C09_COLS[6:]
+C09_VALUE_COLS = C09_COLS[8:]
 
 # C-09 uses 'Total' instead of 'All ages' as the age-group total row label
 _C09_ALL_AGES = ALL_AGES_C09.lower()   # 'total'

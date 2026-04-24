@@ -18,8 +18,8 @@ warnings.filterwarnings("ignore", category=UserWarning)
 # ---------------------------------------------------------------------------
 # CONFIGURATION  (edit here; all build scripts inherit these values)
 # ---------------------------------------------------------------------------
-DATA_ROOT  = "/Users/anandagarwal/dsm_project/census_downloads_2011"
-OUTPUT_DIR = "/Users/anandagarwal/dsm_project/output_datasets"
+DATA_ROOT  = "/Users/anandagarwal/dsm_project/census_2001_sorted"
+OUTPUT_DIR = "/Users/anandagarwal/dsm_project/output_datasets_2001"
 
 # ---------------------------------------------------------------------------
 # FOLDER MAP
@@ -527,13 +527,25 @@ def _make_geo(state_code, state_name, bracket) -> dict:
 def _state_slice(df: pd.DataFrame) -> pd.DataFrame:
     """
     Return only state-level Total rows.
-    Criterion: district_code == '000'  AND  area_type == 'Total'.
+    2011: district_code == '000'
+    2001: district_code == '00' (2-digit) + tehsil_code == '0000'
+    Handles both automatically.
     """
-    return df[
-        (df['district_code'] == '000') &
-        (df['area_type']     == 'Total')
-    ]
+    area_total = df['area_type'] == 'Total'
 
+    if 'tehsil_code' in df.columns:
+        # 2001 format: state-level rows have district='00', tehsil='0000'
+        return df[
+            area_total &
+            (df['district_code'] == '00') &
+            (df['tehsil_code']   == '0000')
+        ]
+    else:
+        # 2011 format: state-level rows have district='000'
+        return df[
+            area_total &
+            (df['district_code'] == '000')
+        ]
 
 def _normalise_age_label(raw_label: str) -> str:
     """
