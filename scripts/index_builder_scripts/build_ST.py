@@ -13,9 +13,15 @@ Outputs  : df_ST_state.csv   — all columns (male + female + persons)
 Format   : LONG — one row per (state × age_bracket)
            Age brackets: age_below10 | age_10_13 | age_14_17 | age_18_21
 
-Note: The parsers and compute functions here are structurally identical to
-      build_SC.py. The only difference is PREFIX = 'ST' and the dataset
-      keys passed to _glob_files (C-02-ST, C-08-ST, C-12-ST).
+Bracket map notes (see utils.py for full detail):
+  C-02-ST : uses AGE_BRACKET_C02  — 5-year bands; brackets are APPROXIMATE
+             ('10-14' → age_10_13, '15-19' → age_14_17, '20-24' → age_18_21)
+  C-08-ST : uses AGE_BRACKET_C08  — individual years 7-19, then 5-year bands;
+             age_18_21 captures only ages 18-19 (20-21 inseparable from 20-24)
+  C-12-ST : uses AGE_BRACKET_C12  — individual years 5-19 only;
+             age_below10 starts at age 5; age_18_21 captures only 18-19
+
+Note: Structurally identical to build_SC.py — only PREFIX and dataset keys differ.
 =============================================================================
 """
 
@@ -23,10 +29,14 @@ import numpy as np
 import pandas as pd
 
 from utils import (
-    AGE_BRACKETS, AGE_BRACKET_POPULATION,
+    AGE_BRACKETS,
+    AGE_BRACKET_C02,
+    AGE_BRACKET_C08,
+    AGE_BRACKET_C12,
+    ALL_AGES_LABEL, EXCLUDE_AGES,
     GEO_KEYS,
     _read_excel, _glob_files, _pad_df, _clean_name,
-    _state_slice, _rows_for_bracket, _make_geo, _outer_merge,
+    _state_slice, _rows_for_bracket, _sum_bracket, _make_geo, _outer_merge,
     gender_split, save_outputs,
     safe_div,
 )
@@ -36,7 +46,8 @@ PREFIX = 'ST'
 
 # =============================================================================
 # SECTION 1 — C-02_(ST)   (Marital status × Age × Sex)
-# Columns: CMPR_ST_male, CMPR_ST_female, CMPR_ST_persons
+# Bracket map : AGE_BRACKET_C02  (5-year bands; approximate)
+# Columns     : CMPR_ST_male, CMPR_ST_female, CMPR_ST_persons
 # =============================================================================
 
 C02_COLS = [
@@ -59,16 +70,23 @@ def _parse_c02(filepath: str) -> pd.DataFrame:
         raw[col] = raw[col].astype(str).str.strip()
     for c in C02_COLS[6:]:
         raw[c] = pd.to_numeric(raw[c], errors='coerce').fillna(0)
+    # Drop 'All ages' total row and 'Age not stated' rows — these must not
+    # be summed into bracket numerators or denominators.
+    raw = raw[~raw['age_group'].str.strip().str.lower().isin(
+        {ALL_AGES_LABEL.lower()} | {e.lower() for e in EXCLUDE_AGES}
+    )]
     return raw.reset_index(drop=True)
 
 
 def _compute_c02_for_bracket(df: pd.DataFrame, bracket: str) -> dict:
     """
-    CMPR = currently married in bracket / total population in bracket × 100
+    CMPR = currently married in bracket / total population in bracket × 100.
+    Uses AGE_BRACKET_C02 (5-year bands).  C-02 has a single matching row per
+    bracket so _rows_for_bracket is sufficient (no summing of individual years).
     Produces _male, _female, _persons variants.
     """
     p       = PREFIX
-    br_rows = _rows_for_bracket(df, 'age_group', bracket, AGE_BRACKET_POPULATION)
+    br_rows = _rows_for_bracket(df, 'age_group', bracket, AGE_BRACKET_C02)
 
     return {
         f'CMPR_{p}_male'    : safe_div(br_rows['curr_married_m'].sum(),
@@ -105,8 +123,12 @@ def build_c02_indexes(dataset_key: str = 'C-02-ST') -> pd.DataFrame:
 
 # =============================================================================
 # SECTION 2 — C-08_(ST)   (Education level × Age × Sex)
-# Columns: Literacy_rate_ST_male/female, Illiteracy_rate_ST_female,
-#          Below_primary_share_ST_female, Graduate_rate_ST_male/female
+# Bracket map : AGE_BRACKET_C08  (individual years 7-19, sums required)
+# Columns     : Literacy_rate_ST_male/female, Illiteracy_rate_ST_female,
+#               Below_primary_share_ST_female, Graduate_rate_ST_male/female
+#
+# NOTE: age_18_21 sums only ages 18 and 19.  Ages 20-21 cannot be separated
+#       from the '20-24' grouped band and are therefore excluded.
 # =============================================================================
 
 C08_COLS = [
@@ -127,40 +149,48 @@ C08_COLS = [
     'unclassified_p', 'unclassified_m', 'unclassified_f',
 ]
 
+C08_VALUE_COLS = C08_COLS[6:]
+
 
 def _parse_c08(filepath: str) -> pd.DataFrame:
     raw = _pad_df(_read_excel(filepath), len(C08_COLS))
     raw.columns = C08_COLS
     for col in ['district_code', 'area_type', 'age_group', 'area_name', 'state_code']:
         raw[col] = raw[col].astype(str).str.strip()
-    for c in C08_COLS[6:]:
+    for c in C08_VALUE_COLS:
         raw[c] = pd.to_numeric(raw[c], errors='coerce').fillna(0)
+    # Drop the 'All ages' total row and 'Age not stated' rows before any
+    # summing — including the '0-6' grouped band which is outside our brackets.
+    raw = raw[~raw['age_group'].str.strip().str.lower().isin(
+        {ALL_AGES_LABEL.lower()} | {e.lower() for e in EXCLUDE_AGES}
+    )]
     return raw.reset_index(drop=True)
 
 
 def _compute_c08_for_bracket(df: pd.DataFrame, bracket: str) -> dict:
     """
     Literacy and education indexes for the ST population in one age bracket.
+    Uses AGE_BRACKET_C08 — individual-year rows are summed via _sum_bracket.
     """
-    p  = PREFIX
-    br = _rows_for_bracket(df, 'age_group', bracket, AGE_BRACKET_POPULATION)
+    p   = PREFIX
+    agg = _sum_bracket(df, 'age_group', C08_VALUE_COLS, bracket, AGE_BRACKET_C08)
 
-    tot_m   = br['total_m'].sum()
-    tot_f   = br['total_f'].sum()
-    lit_m   = br['literate_m'].sum()
-    lit_f   = br['literate_f'].sum()
-    illit_f = br['illiterate_f'].sum()
-    bp_f    = br['below_primary_f'].sum()
-    grad_m  = br['graduate_m'].sum()
-    grad_f  = br['graduate_f'].sum()
+    tot_m   = agg['total_m']
+    tot_f   = agg['total_f']
+    lit_m   = agg['literate_m']
+    lit_f   = agg['literate_f']
+    illit_f = agg['illiterate_f']
+    illit_m = agg['illiterate_m']
+    bp_m    = agg['below_primary_m']
+    bp_f    = agg['below_primary_f']
 
     return {
-        f'Literacy_rate_{p}_male'         : safe_div(lit_m, tot_m),
-        f'Literacy_rate_{p}_female'       : safe_div(lit_f, tot_f),
+        f'Literacy_rate_{p}_male'         : safe_div(lit_m,   tot_m),
+        f'Literacy_rate_{p}_female'       : safe_div(lit_f,   tot_f),
+        f'Illiteracy_rate_{p}_male'       : safe_div(illit_m, tot_m),
         f'Illiteracy_rate_{p}_female'     : safe_div(illit_f, tot_f),
-        f'Below_primary_share_{p}_female' : safe_div(bp_f, lit_f),
-        f'Graduate_rate_{p}_male'         : safe_div(grad_m, tot_m),
-        f'Graduate_rate_{p}_female'       : safe_div(grad_f, tot_f),
+        f'Below_primary_share_{p}_male'   : safe_div(bp_m,    lit_m),
+        f'Below_primary_share_{p}_female' : safe_div(bp_f,    lit_f),
     }
 
 
@@ -189,10 +219,16 @@ def build_c08_indexes(dataset_key: str = 'C-08-ST') -> pd.DataFrame:
 
 # =============================================================================
 # SECTION 3 — C-12_(ST)   (School attendance × Economic activity, age 5-19)
-# Columns: School_attendance_rate_ST_male/female, Dropout_rate_ST_male/female,
-#          Child_labour_attending_ST_male/female,
-#          Child_labour_dropout_ST_male/female,
-#          Non_worker_dropout_ST_female
+# Bracket map : AGE_BRACKET_C12  (individual years 5-19; sums required)
+# Columns     : School_attendance_rate_ST_male/female,
+#               Dropout_rate_ST_male/female,
+#               Child_labour_attending_ST_male/female,
+#               Child_labour_dropout_ST_male/female,
+#               Non_worker_dropout_ST_female
+#
+# NOTE: age_below10 covers only ages 5-9 (no data for 0-4 in C-12).
+#       age_18_21 covers only ages 18-19 (dataset ends at 19).
+#       When _sum_bracket returns NaN for a bracket, the index is also NaN.
 # =============================================================================
 
 C12_COLS = [
@@ -209,51 +245,55 @@ C12_COLS = [
     'natt_nonw_p',   'natt_nonw_m',   'natt_nonw_f',
 ]
 
+C12_VALUE_COLS = C12_COLS[6:]
+
 
 def _parse_c12(filepath: str) -> pd.DataFrame:
     raw = _pad_df(_read_excel(filepath), len(C12_COLS))
     raw.columns = C12_COLS
     for col in ['district_code', 'area_type', 'age_group', 'area_name', 'state_code']:
         raw[col] = raw[col].astype(str).str.strip()
-    for c in C12_COLS[6:]:
+    for c in C12_VALUE_COLS:
         raw[c] = pd.to_numeric(raw[c], errors='coerce').fillna(0)
+    # Drop the '5-19' aggregate row — individual-year rows are summed instead.
+    # C-12 has no 'Age not stated' row but we filter defensively anyway.
+    raw = raw[~raw['age_group'].str.strip().str.lower().isin(
+        {'5-19', ALL_AGES_LABEL.lower()} | {e.lower() for e in EXCLUDE_AGES}
+    )]
     return raw.reset_index(drop=True)
 
 
 def _compute_c12_for_bracket(df: pd.DataFrame, bracket: str) -> dict:
     """
     School attendance, dropout, and child labour indexes for the ST population.
+    Uses AGE_BRACKET_C12 — individual-year rows are summed via _sum_bracket.
+    Returns NaN for any index where the bracket has no rows (e.g. age_18_21
+    beyond age 19, or age_below10 if 0-4 are needed but absent).
     """
-    p  = PREFIX
-    br = _rows_for_bracket(df, 'age_group', bracket, AGE_BRACKET_POPULATION)
-    if br.empty:
-        br = df   # fallback: use all rows
+    p   = PREFIX
+    agg = _sum_bracket(df, 'age_group', C12_VALUE_COLS, bracket, AGE_BRACKET_C12)
 
-    tot_m = br['total_m'].sum()
-    tot_f = br['total_f'].sum()
+    tot_m = agg['total_m']
+    tot_f = agg['total_f']
 
-    # Attending school (workers + non-workers who attend)
-    att_m = (br['att_main_m'] + br['att_marg36_m'] +
-             br['att_marg3_m'] + br['att_nonw_m']).sum()
-    att_f = (br['att_main_f'] + br['att_marg36_f'] +
-             br['att_marg3_f'] + br['att_nonw_f']).sum()
+    # Attending school: workers + non-workers who attend
+    att_m = agg['att_main_m'] + agg['att_marg36_m'] + agg['att_marg3_m'] + agg['att_nonw_m']
+    att_f = agg['att_main_f'] + agg['att_marg36_f'] + agg['att_marg3_f'] + agg['att_nonw_f']
 
     # Not attending school
-    natt_m = (br['natt_main_m'] + br['natt_marg36_m'] +
-              br['natt_marg3_m'] + br['natt_nonw_m']).sum()
-    natt_f = (br['natt_main_f'] + br['natt_marg36_f'] +
-              br['natt_marg3_f'] + br['natt_nonw_f']).sum()
+    natt_m = agg['natt_main_m'] + agg['natt_marg36_m'] + agg['natt_marg3_m'] + agg['natt_nonw_m']
+    natt_f = agg['natt_main_f'] + agg['natt_marg36_f'] + agg['natt_marg3_f'] + agg['natt_nonw_f']
 
     # Child labour (main + marginal workers) — attending school
-    cl_att_m = (br['att_main_m'] + br['att_marg36_m'] + br['att_marg3_m']).sum()
-    cl_att_f = (br['att_main_f'] + br['att_marg36_f'] + br['att_marg3_f']).sum()
+    cl_att_m = agg['att_main_m'] + agg['att_marg36_m'] + agg['att_marg3_m']
+    cl_att_f = agg['att_main_f'] + agg['att_marg36_f'] + agg['att_marg3_f']
 
     # Child labour (main + marginal workers) — not attending school
-    cl_natt_m = (br['natt_main_m'] + br['natt_marg36_m'] + br['natt_marg3_m']).sum()
-    cl_natt_f = (br['natt_main_f'] + br['natt_marg36_f'] + br['natt_marg3_f']).sum()
+    cl_natt_m = agg['natt_main_m'] + agg['natt_marg36_m'] + agg['natt_marg3_m']
+    cl_natt_f = agg['natt_main_f'] + agg['natt_marg36_f'] + agg['natt_marg3_f']
 
     # Non-worker and not attending (female only — key vulnerability indicator)
-    nonw_natt_f = br['natt_nonw_f'].sum()
+    nonw_natt_f = agg['natt_nonw_f']
 
     return {
         f'School_attendance_rate_{p}_male'   : safe_div(att_m,       tot_m),

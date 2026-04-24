@@ -13,6 +13,25 @@ Format   : LONG — one row per (state × age_bracket)
            Age brackets: age_below10 | age_10_13 | age_14_17 | age_18_21
 
 Religions tracked: hindu | muslim | christian | sikh | buddhist | jain
+
+Indexes produced
+----------------
+C-05 (age at marriage):
+  CMPR_{religion}_male/female
+    = currently married in bracket / total ever-married for religion
+
+C-09 (education × religion × current age):
+  Literacy_rate_{religion}_male/female
+  Illiteracy_rate_{religion}_male/female
+  Below_primary_share_{religion}_female
+  Middle_school_share_{religion}_female
+  Graduate_rate_{religion}_male/female
+
+Coverage notes:
+  C-05 age_18_21 bracket   : sums 18-19 and 20-21 rows (exact match)
+  C-09 age_18_21 bracket   : sums only ages 18-19; 20-21 inseparable
+                              from '20-24' band (partial)
+  C-09 age_below10 bracket : sums only ages 7-9 (no 0-6 individual rows)
 =============================================================================
 """
 
@@ -20,25 +39,51 @@ import numpy as np
 import pandas as pd
 
 from utils import (
-    AGE_BRACKETS, AGE_BRACKET_MARRIAGE, AGE_BRACKET_POPULATION,
-    ALL_AGES_LABEL, EXCLUDE_AGES,
-    TARGET_RELIGIONS, SKIP_RELIGIONS, SKIP_REL_C09,
+    AGE_BRACKETS,
+    AGE_BRACKET_MARRIAGE_C05,   # C-05: 2-year bands, age at marriage
+    AGE_BRACKET_C09,            # C-09: individual years 7-19, current age
+    ALL_AGES_LABEL, ALL_AGES_C09, EXCLUDE_AGES,
+    TARGET_RELIGIONS,
     GEO_KEYS,
     _read_excel, _glob_files, _pad_df, _clean_name,
-    _rows_for_bracket, _make_geo, _outer_merge,
+    _rows_for_bracket, _sum_bracket, _make_geo, _outer_merge,
     gender_split, save_outputs,
     safe_div,
 )
 
+# Lowercase versions of skip sets — comparisons always happen after .lower()
+_SKIP_C05 = {'all religious communities', 'nan', '', 'total'}
+_SKIP_C09 = {'all religious communities', 'nan', '', 'total'}
+
 
 # =============================================================================
 # SECTION 1 — C-05   (Religion × Age at Marriage)
-# ONE national file; iterate over state_code groups inside it.
-# Columns per religion: CMPR_{religion}_male, CMPR_{religion}_female
+# ONE national file; rows cover all states via state_code groups.
+#
+# Column layout
+# -------------
+# ever_married_m/f  : total ever-married for this religion × age-at-marriage
+#                     cell.  The 'All ages' row gives the religion total.
+# curr_m/f_all      : currently married (all marriage durations combined).
+#                     This is the numerator for CMPR.
+#
+# CMPR formula
+# ------------
+# CMPR_{religion}_{sex} =
+#     sum(curr_{sex}_all  for rows in bracket)
+#   / sum(ever_married_{sex} for 'All ages' row of same religion)
+#   × 100
+#
+# Denominator is the 'All ages' ever-married total for the religion (not the
+# bracket total) so that CMPR represents the fraction of all ever-married
+# persons in this religion who are currently married AND were in the given
+# age-at-marriage bracket.
 # =============================================================================
 
+# In build_religion.py
+
 C05_COLS = [
-    'table_name', 'state_code', 'district_code', 'area_name', 'area_type',
+    'table_name', 'state_code', 'district_code', 'area_type', 'area_name',  # FIXED: swapped area_type ↔ area_name
     'religion', 'age_at_marriage',
     'ever_married_m', 'ever_married_f',
     'curr_m_all', 'curr_f_all',
@@ -51,24 +96,26 @@ C05_COLS = [
     'curr_m_dur_unk', 'curr_f_dur_unk',
 ]
 
+_C05_ALL_AGES = ALL_AGES_LABEL.lower()   # 'all ages'
+
+# ── In build_religion.py ──────────────────────────────────────────────────
+
 
 def _parse_c05(filepath: str) -> pd.DataFrame:
     raw = _pad_df(_read_excel(filepath), len(C05_COLS))
     raw.columns = C05_COLS
-    for col in ['district_code', 'area_type', 'religion', 'age_at_marriage',
-                'area_name', 'state_code']:
+    for col in ['district_code', 'area_type', 'religion',
+                'age_at_marriage', 'area_name', 'state_code']:
         raw[col] = raw[col].astype(str).str.strip()
-    raw = raw[~raw['age_at_marriage'].isin(EXCLUDE_AGES)]
+    raw['religion']        = raw['religion'].str.lower()
+    raw['age_at_marriage'] = raw['age_at_marriage'].str.lower()
+    raw = raw[~raw['age_at_marriage'].isin({e.lower() for e in EXCLUDE_AGES})]
     for c in C05_COLS[7:]:
         raw[c] = pd.to_numeric(raw[c], errors='coerce').fillna(0)
     return raw.reset_index(drop=True)
 
 
 def build_c05_indexes(dataset_key: str = 'C-05') -> pd.DataFrame:
-    """
-    Parse the single national C-05 file and build per-state, per-bracket
-    CMPR values for each religion.
-    """
     files = _glob_files(dataset_key)
     print(f"    {dataset_key}: {len(files)} files (expected 1 national file)")
     if not files:
@@ -77,23 +124,24 @@ def build_c05_indexes(dataset_key: str = 'C-05') -> pd.DataFrame:
     fp = files[0]
     try:
         df = _parse_c05(fp)
-        # Normalise for matching
-        df['religion']       = df['religion'].str.lower().str.strip()
-        df['age_at_marriage'] = df['age_at_marriage'].str.lower().str.strip()
-        # Keep only Total area rows
-        df = df[df['area_type'] == 'Total']
+        # FIXED: filter on area_type (col3 = 'Total'/'Rural'/'Urban')
+        df = df[df['area_type'].str.lower() == 'total']
+        if df.empty:
+            print(f"      [WARN] No rows matched area_type='Total'")
+            return pd.DataFrame()
     except Exception as e:
         print(f"      [ERROR] C-05 parse failed: {e}")
         return pd.DataFrame()
 
     rows = []
     for state_code, state_df in df.groupby('state_code'):
-        state_name = _clean_name(state_df['area_name'].iloc[0])
+        # FIXED: state name is in area_name (col4), strip 'State - ' prefix
+        raw_label = str(state_df['area_name'].iloc[0])
+        state_name = _clean_name(raw_label.replace('State - ', '').strip())
 
-        # Build religion label map once per state to avoid repeated scanning
         religion_raw_map: dict[str, list] = {}
         for raw_rel in state_df['religion'].unique():
-            if raw_rel in SKIP_RELIGIONS:
+            if raw_rel in _SKIP_C05:
                 continue
             for target in TARGET_RELIGIONS:
                 if target in raw_rel:
@@ -110,35 +158,39 @@ def build_c05_indexes(dataset_key: str = 'C-05') -> pd.DataFrame:
                     continue
 
                 sub = state_df[state_df['religion'].isin(raw_labels)]
-
-                # 'All ages' row (normalised to lowercase in _parse_c05)
-                all_row = sub[sub['age_at_marriage'] == ALL_AGES_LABEL.lower()]
+                all_row = sub[sub['age_at_marriage'] == _C05_ALL_AGES]
                 br_rows = _rows_for_bracket(
-                    sub, 'age_at_marriage', bracket, AGE_BRACKET_MARRIAGE)
+                    sub, 'age_at_marriage', bracket, AGE_BRACKET_MARRIAGE_C05)
 
-                # Fallback: if no explicit 'all ages' row, use the entire sub
                 if all_row.empty:
-                    all_row = sub
+                    denom_m = sub['ever_married_m'].sum()
+                    denom_f = sub['ever_married_f'].sum()
+                else:
+                    denom_m = all_row['ever_married_m'].sum()
+                    denom_f = all_row['ever_married_f'].sum()
 
                 row[f'CMPR_{target}_male']   = safe_div(
-                    br_rows['ever_married_m'].sum(), all_row['ever_married_m'].sum())
+                    br_rows['curr_m_all'].sum(), denom_m)
                 row[f'CMPR_{target}_female'] = safe_div(
-                    br_rows['ever_married_f'].sum(), all_row['ever_married_f'].sum())
+                    br_rows['curr_f_all'].sum(), denom_f)
 
             rows.append(row)
 
     return pd.DataFrame(rows)
 
-
 # =============================================================================
 # SECTION 2 — C-09   (Education × Religion × Age 7+ × Sex)
-# ONE national file; iterate over state_code groups inside it.
-# Columns per religion:
-#   Literacy_rate_{rel}_male/female
-#   Illiteracy_rate_{rel}_female
-#   Below_primary_share_{rel}_female
-#   Middle_school_share_{rel}_female
-#   Graduate_rate_{rel}_male/female
+# ONE national file; rows cover all states via state_code groups.
+#
+# C-09 stores ages as individual single-year rows (7, 8, 9, 10 … 19) then
+# grouped bands (20-24, 25-29, 30-34, 35-59, 60+).  AGE_BRACKET_C09 defines
+# which individual years belong to each canonical bracket; _sum_bracket sums
+# them.  There is no district_code column — area_type == 'Total' is the
+# state-level filter.
+#
+# age_18_21 NOTE: Only ages 18 and 19 are available as individual rows.
+#   Ages 20-21 are embedded in the '20-24' grouped band and cannot be
+#   separated.  The bracket is therefore partial for C-09.
 # =============================================================================
 
 C09_COLS = [
@@ -158,29 +210,29 @@ C09_COLS = [
     'graduate_p', 'graduate_m', 'graduate_f',
 ]
 
-# Metrics to emit — listed explicitly so we can nan-fill missing religions
-# consistently.
-_C09_METRICS = [
-    'Literacy_rate_{r}_male',
-    'Literacy_rate_{r}_female',
-    'Illiteracy_rate_{r}_female',
-    'Below_primary_share_{r}_female',
-    'Middle_school_share_{r}_female',
-    'Graduate_rate_{r}_male',
-    'Graduate_rate_{r}_female',
-]
+C09_VALUE_COLS = C09_COLS[6:]
+
+# C-09 uses 'Total' instead of 'All ages' as the age-group total row label
+_C09_ALL_AGES = ALL_AGES_C09.lower()   # 'total'
 
 
-def _nan_religion(row: dict, target: str) -> None:
-    """Fill all C-09 metrics for a religion with NaN in-place."""
-    for tmpl in _C09_METRICS:
-        row[tmpl.format(r=target)] = np.nan
+def _nan_religion_c09(row: dict, target: str) -> None:
+    """Fill all C-09 metrics for one religion with NaN in-place."""
+    for metric in [
+        f'Literacy_rate_{target}_male',
+        f'Literacy_rate_{target}_female',
+        f'Illiteracy_rate_{target}_male',
+        f'Illiteracy_rate_{target}_female',
+        f'Below_primary_share_{target}_female',
+        f'Middle_school_share_{target}_female',
+    ]:
+        row[metric] = np.nan
 
 
 def build_c09_indexes(dataset_key: str = 'C-09') -> pd.DataFrame:
     """
-    Parse the single national C-09 file and build per-state, per-bracket
-    literacy / education indexes for each religion.
+    Build per-state, per-bracket literacy / education indexes for each
+    religion from C-09.
     """
     files = _glob_files(dataset_key)
     print(f"    {dataset_key}: {len(files)} files (expected 1 national file)")
@@ -193,8 +245,17 @@ def build_c09_indexes(dataset_key: str = 'C-09') -> pd.DataFrame:
         raw.columns = C09_COLS
         for col in ['area_type', 'religion', 'age_group', 'state_code', 'area_name']:
             raw[col] = raw[col].astype(str).str.strip()
+        # State-level rows: C-09 has no district_code; use area_type directly
         raw = raw[raw['area_type'] == 'Total']
-        for c in C09_COLS[6:]:
+        # Lowercase for consistent matching
+        raw['religion']  = raw['religion'].str.lower()
+        raw['age_group'] = raw['age_group'].str.lower()
+        # Drop aggregate age rows before summing individual years
+        # ('total'/'all ages' and 'age not stated' rows must not be summed)
+        raw = raw[~raw['age_group'].isin(
+            {_C09_ALL_AGES} | {e.lower() for e in EXCLUDE_AGES}
+        )]
+        for c in C09_VALUE_COLS:
             raw[c] = pd.to_numeric(raw[c], errors='coerce').fillna(0)
     except Exception as e:
         print(f"      [ERROR] C-09 parse failed: {e}")
@@ -204,47 +265,47 @@ def build_c09_indexes(dataset_key: str = 'C-09') -> pd.DataFrame:
     for state_code, state_df in raw.groupby('state_code'):
         state_name = _clean_name(state_df['area_name'].iloc[0])
 
-        # Build religion label map once per state
+        # Build religion label map — religion is already lowercased;
+        # skip set is also lowercase to ensure correct exclusion.
         religion_raw_map: dict[str, list] = {}
         for raw_rel in state_df['religion'].unique():
-            if raw_rel in SKIP_REL_C09:
+            if raw_rel in _SKIP_C09:
                 continue
-            key = raw_rel.lower().strip()
             for target in TARGET_RELIGIONS:
-                if target in key:
+                if target in raw_rel:
                     religion_raw_map.setdefault(target, []).append(raw_rel)
 
         for bracket in AGE_BRACKETS:
-            # Rows for this bracket in this state
-            br = _rows_for_bracket(
-                state_df, 'age_group', bracket, AGE_BRACKET_POPULATION)
             row = _make_geo(state_code, state_name, bracket)
 
             for target in TARGET_RELIGIONS:
                 raw_labels = religion_raw_map.get(target, [])
                 if not raw_labels:
-                    _nan_religion(row, target)
+                    _nan_religion_c09(row, target)
                     continue
 
-                rel_br = br[br['religion'].isin(raw_labels)]
+                # Filter to this religion, then sum individual-year rows for
+                # the bracket using AGE_BRACKET_C09 via _sum_bracket.
+                rel_df = state_df[state_df['religion'].isin(raw_labels)]
+                agg = _sum_bracket(
+                    rel_df, 'age_group', C09_VALUE_COLS, bracket, AGE_BRACKET_C09)
 
-                tot_m   = rel_br['total_m'].sum()
-                tot_f   = rel_br['total_f'].sum()
-                lit_m   = rel_br['literate_m'].sum()
-                lit_f   = rel_br['literate_f'].sum()
-                illit_f = rel_br['illiterate_f'].sum()
-                bp_f    = rel_br['below_primary_f'].sum()
-                mid_f   = rel_br['middle_f'].sum()
-                grad_m  = rel_br['graduate_m'].sum()
-                grad_f  = rel_br['graduate_f'].sum()
+                tot_m   = agg['total_m']
+                tot_f   = agg['total_f']
+                lit_m   = agg['literate_m']
+                lit_f   = agg['literate_f']
+                illit_m = agg['illiterate_m']
+                illit_f = agg['illiterate_f']
+                bp_f    = agg['below_primary_f']
+                mid_f   = agg['middle_f']
 
                 row[f'Literacy_rate_{target}_male']         = safe_div(lit_m,   tot_m)
                 row[f'Literacy_rate_{target}_female']       = safe_div(lit_f,   tot_f)
+                row[f'Illiteracy_rate_{target}_male']       = safe_div(illit_m, tot_m)
                 row[f'Illiteracy_rate_{target}_female']     = safe_div(illit_f, tot_f)
                 row[f'Below_primary_share_{target}_female'] = safe_div(bp_f,    lit_f)
                 row[f'Middle_school_share_{target}_female'] = safe_div(mid_f,   lit_f)
-                row[f'Graduate_rate_{target}_male']         = safe_div(grad_m,  tot_m)
-                row[f'Graduate_rate_{target}_female']       = safe_div(grad_f,  tot_f)
+               
 
             rows.append(row)
 
