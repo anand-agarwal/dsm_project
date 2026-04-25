@@ -4,3 +4,4 @@ neha_experiments/
 **/.venv/
 __pycache__
 census_2001_sorted/
+.DS_Store
