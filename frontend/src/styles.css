@@ -1,0 +1,190 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Bharat Census — Editorial design system
+ * Inspired by NYT / The Pudding / Reuters Graphics.
+ * Serif display + clean sans body. Restrained palette with bold data accents.
+ */
+
+@theme inline {
+  --font-display: "Source Serif 4", "Source Serif Pro", "Iowan Old Style", Georgia, serif;
+  --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+  --radius-xl: 10px;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+
+  /* Editorial / brand */
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
+  --color-rule: var(--rule);
+  --color-subtle: var(--subtle);
+
+  /* Data scales — semantic */
+  --color-cmpr-50: var(--cmpr-50);
+  --color-cmpr-100: var(--cmpr-100);
+  --color-cmpr-300: var(--cmpr-300);
+  --color-cmpr-500: var(--cmpr-500);
+  --color-cmpr-700: var(--cmpr-700);
+  --color-cmpr-900: var(--cmpr-900);
+
+  --color-edu-50: var(--edu-50);
+  --color-edu-100: var(--edu-100);
+  --color-edu-300: var(--edu-300);
+  --color-edu-500: var(--edu-500);
+  --color-edu-700: var(--edu-700);
+  --color-edu-900: var(--edu-900);
+
+  --color-saffron: var(--saffron);
+  --color-spice: var(--spice);
+  --color-tea: var(--tea);
+
+  --color-chart-1: var(--cmpr-500);
+  --color-chart-2: var(--edu-500);
+  --color-chart-3: var(--saffron);
+  --color-chart-4: var(--tea);
+  --color-chart-5: var(--ink);
+}
+
+:root {
+  --radius: 4px;
+
+  /* Editorial palette */
+  --paper: oklch(0.985 0.005 85);          /* warm off-white */
+  --ink: oklch(0.18 0.015 60);              /* deep warm black */
+  --rule: oklch(0.88 0.01 80);              /* hairline rule */
+  --subtle: oklch(0.55 0.01 70);            /* secondary type */
+
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: oklch(1 0 0);
+  --card-foreground: var(--ink);
+  --popover: oklch(0.99 0.005 85);
+  --popover-foreground: var(--ink);
+  --primary: oklch(0.18 0.015 60);
+  --primary-foreground: oklch(0.985 0.005 85);
+  --secondary: oklch(0.95 0.01 80);
+  --secondary-foreground: var(--ink);
+  --muted: oklch(0.94 0.008 80);
+  --muted-foreground: var(--subtle);
+  --accent: oklch(0.93 0.02 50);
+  --accent-foreground: var(--ink);
+  --destructive: oklch(0.55 0.22 27);
+  --destructive-foreground: oklch(0.985 0.005 85);
+  --border: var(--rule);
+  --input: var(--rule);
+  --ring: oklch(0.55 0.18 30);
+
+  /* CMPR — red sequential (light → dark) */
+  --cmpr-50:  oklch(0.97 0.02 30);
+  --cmpr-100: oklch(0.93 0.05 28);
+  --cmpr-300: oklch(0.78 0.13 28);
+  --cmpr-500: oklch(0.62 0.20 28);
+  --cmpr-700: oklch(0.48 0.20 28);
+  --cmpr-900: oklch(0.32 0.15 28);
+
+  /* Education — blue sequential */
+  --edu-50:  oklch(0.97 0.02 240);
+  --edu-100: oklch(0.92 0.05 240);
+  --edu-300: oklch(0.75 0.12 240);
+  --edu-500: oklch(0.55 0.16 240);
+  --edu-700: oklch(0.42 0.15 240);
+  --edu-900: oklch(0.28 0.12 240);
+
+  /* India accents */
+  --saffron: oklch(0.74 0.16 60);
+  --spice:   oklch(0.55 0.18 35);
+  --tea:     oklch(0.55 0.10 150);
+
+  --sidebar: var(--paper);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--ink);
+  --sidebar-primary-foreground: var(--paper);
+  --sidebar-accent: var(--muted);
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: var(--rule);
+  --sidebar-ring: var(--ring);
+}
+
+.dark {
+  --paper: oklch(0.16 0.01 60);
+  --ink: oklch(0.96 0.005 85);
+  --rule: oklch(0.28 0.01 70);
+  --subtle: oklch(0.65 0.01 70);
+
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: oklch(0.20 0.01 60);
+  --card-foreground: var(--ink);
+  --popover: oklch(0.20 0.01 60);
+  --popover-foreground: var(--ink);
+  --primary: oklch(0.96 0.005 85);
+  --primary-foreground: oklch(0.18 0.015 60);
+  --secondary: oklch(0.24 0.01 60);
+  --secondary-foreground: var(--ink);
+  --muted: oklch(0.24 0.01 60);
+  --muted-foreground: var(--subtle);
+  --accent: oklch(0.26 0.02 50);
+  --accent-foreground: var(--ink);
+  --destructive: oklch(0.62 0.20 28);
+  --destructive-foreground: var(--ink);
+  --border: var(--rule);
+  --input: var(--rule);
+}
+
+@layer base {
+  * { border-color: var(--color-border); }
+  html { font-family: var(--font-body); }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-feature-settings: "ss01", "cv11";
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: -0.01em; }
+  .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+  .rule { border-top: 1px solid var(--color-rule); }
+  .eyebrow {
+    font-family: var(--font-body);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-subtle);
+    font-weight: 600;
+  }
+  .dropcap::first-letter {
+    font-family: var(--font-display);
+    font-size: 3.4em;
+    float: left;
+    line-height: 0.9;
+    padding: 0.1em 0.1em 0 0;
+    color: var(--color-cmpr-700);
+  }
+}
