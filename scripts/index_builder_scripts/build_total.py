@@ -42,7 +42,7 @@ from utils import (
 # =============================================================================
 
 C04_COLS = [
-    'table_name', 'state_code', 'district_code', 'tehsil_code', 'area_name', 'area_type',
+    'table_name', 'state_code', 'district_code', 'area_name', 'area_type',
     'age_at_marriage',
     'ever_married_m', 'ever_married_f',
     'curr_m_all', 'curr_f_all',
@@ -63,7 +63,7 @@ def _parse_c04(filepath: str) -> pd.DataFrame:
                 'area_name', 'state_code']:
         raw[col] = raw[col].astype(str).str.strip()
     raw = raw[~raw['age_at_marriage'].isin(EXCLUDE_AGES)]
-    for c in C04_COLS[7:]:
+    for c in C04_COLS[6:]:
         raw[c] = pd.to_numeric(raw[c], errors='coerce').fillna(0)
     return raw.reset_index(drop=True)
 
@@ -120,7 +120,7 @@ def build_c04_indexes(dataset_key: str = 'C-04') -> pd.DataFrame:
 # =============================================================================
 
 C06_COLS = [
-    'table_name', 'state_code', 'district_code', 'tehsil_code', 'area_name', 'area_type',
+    'table_name', 'state_code', 'district_code', 'area_name', 'area_type',
     'edu_level', 'age_at_marriage',
     'ever_married_m', 'ever_married_f',
     'curr_m_all', 'curr_f_all',
@@ -144,7 +144,7 @@ def _parse_c06(filepath: str) -> pd.DataFrame:
                                         .str.strip()
                                         .replace(EDU_LEVEL_ALIASES))
     raw = raw[~raw['age_at_marriage'].isin(EXCLUDE_AGES)]
-    for c in C06_COLS[8:]:
+    for c in C06_COLS[7:]:
         raw[c] = pd.to_numeric(raw[c], errors='coerce').fillna(0)
     return raw.reset_index(drop=True)
 
@@ -210,7 +210,7 @@ def build_c06_indexes(dataset_key: str = 'C-06') -> pd.DataFrame:
 # =============================================================================
 
 C07_COLS = [
-    'table_name', 'state_code', 'district_code', 'tehsil_code', 'area_name', 'area_type',
+    'table_name', 'state_code', 'district_code', 'area_name', 'area_type',
     'econ_activity', 'age_at_marriage',
     'ever_married_m', 'ever_married_f',
     'curr_m_all', 'curr_f_all',
@@ -231,7 +231,7 @@ def _parse_c07(filepath: str) -> pd.DataFrame:
                 'age_at_marriage', 'area_name', 'state_code']:
         raw[col] = raw[col].astype(str).str.strip()
     raw = raw[~raw['age_at_marriage'].isin(EXCLUDE_AGES)]
-    for c in C07_COLS[8:]:
+    for c in C07_COLS[7:]:
         raw[c] = pd.to_numeric(raw[c], errors='coerce').fillna(0)
     return raw.reset_index(drop=True)
 
@@ -298,7 +298,7 @@ def build_c07_indexes(dataset_key: str = 'C-07') -> pd.DataFrame:
 # =============================================================================
 
 C08_COLS = [
-    'table_name', 'state_code', 'district_code', 'tehsil_code', 'area_name', 'area_type',
+    'table_name', 'state_code', 'district_code', 'area_name', 'area_type',
     'age_group',
     'total_p', 'total_m', 'total_f',
     'illiterate_p', 'illiterate_m', 'illiterate_f',
@@ -315,7 +315,7 @@ C08_COLS = [
     'unclassified_p', 'unclassified_m', 'unclassified_f',
 ]
 
-C08_VALUE_COLS = C08_COLS[7:]
+C08_VALUE_COLS = C08_COLS[6:]
 
 
 def _parse_c08(filepath: str) -> pd.DataFrame:
@@ -394,7 +394,7 @@ def build_c08_indexes(dataset_key: str = 'C-08') -> pd.DataFrame:
 # =============================================================================
 
 C12_COLS = [
-    'table_name', 'state_code', 'district_code', 'tehsil_code', 'area_name', 'area_type',
+    'table_name', 'state_code', 'district_code', 'area_name', 'area_type',
     'age_group',
     'total_p', 'total_m', 'total_f',
     'att_main_p',   'att_main_m',   'att_main_f',
@@ -407,7 +407,7 @@ C12_COLS = [
     'natt_nonw_p',   'natt_nonw_m',   'natt_nonw_f',
 ]
 
-C12_VALUE_COLS = C12_COLS[7:]
+C12_VALUE_COLS = C12_COLS[6:]
 
 
 def _parse_c12(filepath: str) -> pd.DataFrame:

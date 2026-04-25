@@ -18,8 +18,8 @@ warnings.filterwarnings("ignore", category=UserWarning)
 # ---------------------------------------------------------------------------
 # CONFIGURATION  (edit here; all build scripts inherit these values)
 # ---------------------------------------------------------------------------
-DATA_ROOT  = "/Users/anandagarwal/dsm_project/census_2001_sorted"
-OUTPUT_DIR = "/Users/anandagarwal/dsm_project/output_datasets_2001"
+DATA_ROOT  = "/Users/anandagarwal/dsm_project/census_downloads_2011"
+OUTPUT_DIR = "/Users/anandagarwal/dsm_project/output_datasets_2011"
 
 # ---------------------------------------------------------------------------
 # FOLDER MAP
