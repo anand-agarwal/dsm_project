@@ -4,7 +4,7 @@ import { SiteLayout } from "@/components/SiteLayout";
 export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
-      { title: "About — Bharat.Census" },
+      { title: "About — Bachpan" },
       { name: "description", content: "How this atlas is built, the indicators it uses, and what the numbers mean." },
     ],
   }),
@@ -18,7 +18,7 @@ function About() {
         <div className="eyebrow">Editor's note</div>
         <h1 className="font-display text-5xl tracking-tight mt-1">About this atlas</h1>
         <p className="mt-6 text-lg leading-relaxed dropcap">
-          Bharat.Census is a reading of India's 2001 and 2011 decennial censuses, focused on a single
+          Bachpan is a reading of India's 2001 and 2011 decennial censuses, focused on a single
           question: how often, and where, do Indian children become spouses? The atlas threads child
           marriage through literacy, dropout, work, and social identity — the structural variables that
           shape it.

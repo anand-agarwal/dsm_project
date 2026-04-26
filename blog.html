@@ -144,7 +144,6 @@
     border-radius: 2px;
   }
   .dashboard-cta:hover { background: #923524; }
-  .dashboard-cta svg { width: 0.9rem; height: 0.9rem; }
 
   /* ── LAYOUT ── */
   .container {
@@ -539,6 +538,17 @@
     margin-bottom: 0.2rem;
   }
   .author-info p { font-size: 0.82rem; color: var(--ink-muted); margin: 0; }
+  .linkedin-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .linkedin-icon {
+    width: 0.82rem;
+    height: 0.82rem;
+    display: inline-block;
+    vertical-align: text-bottom;
+  }
 
   /* ── FOOTER ── */
   footer {
@@ -619,7 +629,7 @@
 
 <div class="masthead">
   Ashoka University · Department of Computer Science &nbsp;·&nbsp; <span>CS-3510 Final Project</span> &nbsp;·&nbsp;
-  <a href="http://10.1.33.9:8081" target="_blank">&rAarr; Live Dashboard</a>
+  <a href="/" target="_top">&rAarr; Live Dashboard</a>
 </div>
 
 <!-- HERO -->
@@ -634,8 +644,7 @@
       <span>Census of India 2001 &amp; 2011</span>
       <span>Prof. Lipika Dey</span>
     </div>
-    <a class="dashboard-cta" href="http://10.1.33.9:8081" target="_blank">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+    <a class="dashboard-cta" href="/" target="_top">
       Explore Live Dashboard
     </a>
   </div>
@@ -1041,7 +1050,7 @@ coefs = dict(<span class="fn">zip</span>(feature_names, final_model.coef_))</cod
         <span class="db-badge">CSV Export</span>
       </div>
       <br>
-      <a class="db-link" href="http://10.1.33.9:8081" target="_blank">→ Open Dashboard</a>
+      <a class="db-link" href="/" target="_top">→ Open Dashboard</a>
     </div>
 
     <h3>Technology stack</h3>
@@ -1115,7 +1124,7 @@ coefs = dict(<span class="fn">zip</span>(feature_names, final_model.coef_))</cod
       "The mechanisms driving child marriage are not static. Any policy framework built only on a 2001-era understanding of the problem would miss the household economic distress signal that has since emerged."
     </div>
 
-    <p>The analysis is complemented by an interactive dashboard at <a href="http://10.1.33.9:8081" target="_blank">http://10.1.33.9:8081</a> that visualises CMPR patterns across states, brackets, and sub-groups for non-technical audiences, and exposes the LASSO coefficient comparisons as an explorable interface.</p>
+    <p>The analysis is complemented by an interactive dashboard at <a href="/" target="_top">/</a> that visualises CMPR patterns across states, brackets, and sub-groups for non-technical audiences, and exposes the LASSO coefficient comparisons as an explorable interface.</p>
   </section>
 
   <!-- AUTHOR -->
@@ -1123,14 +1132,14 @@ coefs = dict(<span class="fn">zip</span>(feature_names, final_model.coef_))</cod
     <div class="author-avatar">A</div>
     <div class="author-info">
       <h4>Anand Agarwal</h4>
-      <p>work done</p>
+      <p>Author · <a class="linkedin-link" href="https://www.linkedin.com/in/anand-agarwal-374761212/" target="_blank" rel="noopener noreferrer" aria-label="Anand Agarwal LinkedIn"><svg class="linkedin-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4.98 3.5C4.98 4.88 3.87 6 2.5 6S0 4.88 0 3.5 1.11 1 2.48 1s2.5 1.12 2.5 2.5zM.5 8h4V23h-4V8zm7 0h3.84v2.05h.05c.53-1 1.84-2.05 3.79-2.05C19.3 8 24 10.3 24 16.1V23h-4v-6.09c0-2.9-1.04-4.88-3.64-4.88-1.98 0-3.16 1.33-3.68 2.62-.19.46-.24 1.1-.24 1.74V23h-4V8z"/></svg></a></p>
     </div>
   </div>
   <div class="author-card" style="margin-top:0.8rem;">
     <div class="author-avatar">N</div>
     <div class="author-info">
       <h4>Neha Palak</h4>
-      <p>work done</p>
+      <p>Author · <a class="linkedin-link" href="https://www.linkedin.com/in/neha-palak/" target="_blank" rel="noopener noreferrer" aria-label="Neha Palak LinkedIn"><svg class="linkedin-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4.98 3.5C4.98 4.88 3.87 6 2.5 6S0 4.88 0 3.5 1.11 1 2.48 1s2.5 1.12 2.5 2.5zM.5 8h4V23h-4V8zm7 0h3.84v2.05h.05c.53-1 1.84-2.05 3.79-2.05C19.3 8 24 10.3 24 16.1V23h-4v-6.09c0-2.9-1.04-4.88-3.64-4.88-1.98 0-3.16 1.33-3.68 2.62-.19.46-.24 1.1-.24 1.74V23h-4V8z"/></svg></a></p>
     </div>
   </div>
 

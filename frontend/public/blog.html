@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Child Marriage in India: A Data-Driven Analysis | Anand & Neha</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,300;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1208;
+    --ink-light: #3d3120;
+    --ink-muted: #7a6e5e;
+    --paper: #faf7f2;
+    --paper-warm: #f3ede3;
+    --paper-dark: #e8dfd0;
+    --accent: #b5432a;
+    --accent-gold: #c8922a;
+    --accent-pale: #f0e8d8;
+    --rule: #c8b99a;
+    --code-bg: #1e1b16;
+    --code-text: #e8d8b8;
+    --highlight: #fef3cd;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { font-size: 18px; scroll-behavior: smooth; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-weight: 300;
+    line-height: 1.85;
+    overflow-x: hidden;
+  }
+
+  /* ── MASTHEAD ── */
+  .masthead {
+    background: var(--ink);
+    color: var(--paper);
+    text-align: center;
+    padding: 1rem 2rem 0.8rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    border-bottom: 3px solid var(--accent);
+  }
+  .masthead span { opacity: 0.55; }
+  .masthead a { color: var(--accent-gold); text-decoration: none; }
+
+  /* ── HERO ── */
+  .hero {
+    background: var(--ink);
+    color: var(--paper-warm);
+    padding: 5rem 2rem 4rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 47px,
+      rgba(200,185,154,0.06) 47px,
+      rgba(200,185,154,0.06) 48px
+    );
+    pointer-events: none;
+  }
+  .hero-inner {
+    max-width: 780px;
+    margin: 0 auto;
+    position: relative;
+  }
+  .hero-kicker {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--accent-gold);
+    margin-bottom: 1.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+  .hero-kicker::before {
+    content: '';
+    display: inline-block;
+    width: 2rem;
+    height: 1px;
+    background: var(--accent-gold);
+  }
+  h1 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: clamp(2.4rem, 5vw, 3.8rem);
+    font-weight: 900;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    margin-bottom: 1.2rem;
+  }
+  h1 em {
+    font-style: italic;
+    color: var(--accent-gold);
+  }
+  .hero-sub {
+    font-size: 1.05rem;
+    font-weight: 300;
+    opacity: 0.75;
+    max-width: 580px;
+    line-height: 1.7;
+    margin-bottom: 2rem;
+  }
+  .hero-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    opacity: 0.55;
+  }
+  .hero-meta span { display: flex; align-items: center; gap: 0.4rem; }
+
+  .dashboard-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 2.2rem;
+    background: var(--accent);
+    color: #fff;
+    text-decoration: none;
+    padding: 0.6rem 1.3rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    transition: background 0.2s;
+    border-radius: 2px;
+  }
+  .dashboard-cta:hover { background: #923524; }
+
+  /* ── LAYOUT ── */
+  .container {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 0 2rem;
+  }
+
+  /* ── TOC ── */
+  .toc-wrap {
+    background: var(--paper-dark);
+    border-left: 4px solid var(--accent);
+    margin: 3.5rem auto;
+    max-width: 780px;
+    padding: 1.6rem 2rem;
+  }
+  .toc-wrap h3 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1rem;
+  }
+  .toc-wrap ol {
+    list-style: none;
+    counter-reset: toc;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.25rem 2rem;
+  }
+  .toc-wrap li { counter-increment: toc; }
+  .toc-wrap li::before {
+    content: counter(toc, decimal-leading-zero) ". ";
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem;
+    color: var(--accent);
+    margin-right: 0.3rem;
+  }
+  .toc-wrap a {
+    color: var(--ink-light);
+    text-decoration: none;
+    font-size: 0.82rem;
+  }
+  .toc-wrap a:hover { color: var(--accent); text-decoration: underline; }
+  @media (max-width: 600px) { .toc-wrap ol { grid-template-columns: 1fr; } }
+
+  /* ── SECTIONS ── */
+  section {
+    padding: 4rem 0 2rem;
+    border-top: 1px solid var(--rule);
+  }
+  section:first-of-type { border-top: none; }
+
+  h2 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 1.2rem;
+    color: var(--ink);
+  }
+  h2 .section-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 0.4rem;
+  }
+
+  h3 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    font-style: italic;
+    margin: 2rem 0 0.7rem;
+    color: var(--ink-light);
+  }
+
+  p { margin-bottom: 1.3rem; }
+
+  a { color: var(--accent); }
+
+  /* ── PULL QUOTE ── */
+  .pullquote {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.35rem;
+    font-style: italic;
+    line-height: 1.55;
+    color: var(--accent);
+    border-top: 2px solid var(--accent);
+    border-bottom: 2px solid var(--rule);
+    padding: 1.4rem 0;
+    margin: 2.5rem 0;
+  }
+
+  /* ── STAT CARDS ── */
+  .stat-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin: 2rem 0;
+  }
+  .stat-card {
+    background: var(--ink);
+    color: var(--paper-warm);
+    padding: 1.4rem 1.3rem;
+    border-radius: 2px;
+  }
+  .stat-card .num {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.4rem;
+    font-weight: 900;
+    color: var(--accent-gold);
+    line-height: 1;
+    margin-bottom: 0.3rem;
+  }
+  .stat-card .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    opacity: 0.65;
+    line-height: 1.5;
+  }
+
+  /* ── CODE ── */
+  pre {
+    background: var(--code-bg);
+    color: var(--code-text);
+    padding: 1.4rem 1.6rem;
+    overflow-x: auto;
+    border-radius: 3px;
+    margin: 1.8rem 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    line-height: 1.7;
+    border-left: 3px solid var(--accent);
+  }
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78em;
+    background: var(--paper-dark);
+    padding: 0.1em 0.35em;
+    border-radius: 2px;
+    color: var(--accent);
+  }
+  pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+
+  .code-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 0.3rem;
+  }
+
+  /* ── HIGHLIGHT KEYWORDS ── */
+  .kw { color: #f08080; }
+  .fn { color: #87ceeb; }
+  .st { color: #90ee90; }
+  .cm { color: #888; font-style: italic; }
+  .nm { color: var(--accent-gold); }
+
+  /* ── TABLES ── */
+  .table-wrap { overflow-x: auto; margin: 2rem 0; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+    font-family: 'Source Serif 4', serif;
+  }
+  th {
+    background: var(--ink);
+    color: var(--paper-warm);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.7rem 0.9rem;
+    text-align: left;
+  }
+  td {
+    padding: 0.6rem 0.9rem;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+    line-height: 1.5;
+  }
+  tr:nth-child(even) td { background: var(--accent-pale); }
+  .good { color: #2d6a4f; font-weight: 600; }
+  .warn { color: #b5432a; font-weight: 600; }
+
+  /* ── FINDING CARDS ── */
+  .findings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.2rem;
+    margin: 2rem 0;
+  }
+  @media (max-width: 600px) { .findings-grid { grid-template-columns: 1fr; } }
+  .finding {
+    background: var(--paper-warm);
+    border: 1px solid var(--rule);
+    padding: 1.3rem;
+    border-top: 3px solid var(--accent);
+  }
+  .finding-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+  }
+  .finding h4 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    line-height: 1.3;
+  }
+  .finding p {
+    font-size: 0.82rem;
+    color: var(--ink-light);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  /* ── PIPELINE DIAGRAM ── */
+  .pipeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 2rem 0;
+  }
+  .pipe-step {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+  }
+  .pipe-node {
+    background: var(--ink);
+    color: var(--paper-warm);
+    padding: 1rem 1.4rem;
+    min-width: 200px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .pipe-node .pn { color: var(--accent-gold); font-size: 0.8rem; font-weight: 500; }
+  .pipe-desc {
+    border: 1px solid var(--rule);
+    border-left: none;
+    padding: 1rem 1.2rem;
+    flex: 1;
+    font-size: 0.82rem;
+    color: var(--ink-light);
+    display: flex;
+    align-items: center;
+  }
+  .pipe-arrow {
+    text-align: center;
+    color: var(--accent);
+    padding: 0.15rem 0;
+    font-size: 1rem;
+    line-height: 1;
+  }
+
+  /* ── CALLOUT BOX ── */
+  .callout {
+    background: var(--highlight);
+    border-left: 4px solid var(--accent-gold);
+    padding: 1.2rem 1.5rem;
+    margin: 2rem 0;
+    font-size: 0.88rem;
+    line-height: 1.7;
+  }
+  .callout strong {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent-gold);
+    display: block;
+    margin-bottom: 0.4rem;
+  }
+
+  /* ── LIMITATION BOX ── */
+  .limitations {
+    background: var(--paper-dark);
+    padding: 1.5rem 1.8rem;
+    margin: 2rem 0;
+    border-radius: 2px;
+  }
+  .limitations ol {
+    padding-left: 1.2rem;
+    font-size: 0.86rem;
+    line-height: 1.7;
+  }
+  .limitations li { margin-bottom: 0.5rem; }
+
+  /* ── DASHBOARD EMBED PLACEHOLDER ── */
+  .dashboard-box {
+    background: var(--ink);
+    color: var(--paper-warm);
+    padding: 2.5rem;
+    text-align: center;
+    margin: 2.5rem 0;
+    border-radius: 3px;
+    border: 2px solid var(--accent);
+  }
+  .dashboard-box p {
+    font-size: 0.88rem;
+    opacity: 0.7;
+    margin-bottom: 1.2rem;
+  }
+  .dashboard-box h4 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    margin-bottom: 0.5rem;
+    color: var(--accent-gold);
+  }
+  .dashboard-box .db-link {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    padding: 0.55rem 1.4rem;
+    text-decoration: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-top: 0.5rem;
+    border-radius: 2px;
+    transition: background 0.2s;
+  }
+  .dashboard-box .db-link:hover { background: #923524; }
+  .db-features {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+    margin: 1rem 0 0;
+  }
+  .db-badge {
+    background: rgba(200,146,42,0.2);
+    color: var(--accent-gold);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.56rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.3rem 0.7rem;
+    border-radius: 20px;
+  }
+
+  /* ── AUTHOR CARD ── */
+  .author-card {
+    background: var(--paper-dark);
+    border: 1px solid var(--rule);
+    padding: 1.4rem 1.6rem;
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+    margin: 3.5rem 0 1.5rem;
+  }
+  .author-avatar {
+    width: 3.2rem;
+    height: 3.2rem;
+    border-radius: 50%;
+    background: var(--ink);
+    color: var(--accent-gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .author-info h4 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 0.2rem;
+  }
+  .author-info p { font-size: 0.82rem; color: var(--ink-muted); margin: 0; }
+  .linkedin-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .linkedin-icon {
+    width: 0.82rem;
+    height: 0.82rem;
+    display: inline-block;
+    vertical-align: text-bottom;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--ink);
+    color: var(--paper-warm);
+    text-align: center;
+    padding: 2.5rem 2rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    opacity: 0.7;
+  }
+
+  /* ── UTILS ── */
+  .rule-divider {
+    width: 3rem;
+    height: 2px;
+    background: var(--accent);
+    margin: 1.5rem 0;
+  }
+
+  .tag {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.56rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: var(--accent-pale);
+    color: var(--accent);
+    padding: 0.25rem 0.6rem;
+    border-radius: 2px;
+    margin-right: 0.3rem;
+    margin-bottom: 0.3rem;
+  }
+
+  .wip-banner {
+    background: var(--accent-gold);
+    color: var(--ink);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 0.5rem 2rem;
+    text-align: center;
+  }
+
+  /* ── FORMULA ── */
+  .formula {
+    background: var(--paper-dark);
+    border: 1px solid var(--rule);
+    padding: 1.2rem 1.6rem;
+    margin: 1.5rem 0;
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--ink-light);
+    letter-spacing: 0.04em;
+    border-radius: 2px;
+  }
+
+  /* ── ANIMATION ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .hero-inner > * {
+    animation: fadeUp 0.6s ease both;
+  }
+  .hero-inner > *:nth-child(1) { animation-delay: 0.1s; }
+  .hero-inner > *:nth-child(2) { animation-delay: 0.22s; }
+  .hero-inner > *:nth-child(3) { animation-delay: 0.34s; }
+  .hero-inner > *:nth-child(4) { animation-delay: 0.46s; }
+  .hero-inner > *:nth-child(5) { animation-delay: 0.58s; }
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  Ashoka University · Department of Computer Science &nbsp;·&nbsp; <span>CS-3510 Final Project</span> &nbsp;·&nbsp;
+  <a href="/" target="_top">&rAarr; Live Dashboard</a>
+</div>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-kicker">Data Science &amp; Public Policy</div>
+    <h1>Child Marriage<br>in <em>India</em></h1>
+    <p class="hero-sub">A data-driven investigation into the socio-economic drivers of child marriage across Indian states, using Census 2001 and 2011 microdata, LASSO regression, and an interactive state-level dashboard.</p>
+    <div class="hero-meta">
+      <span>Anand Agarwal &amp; Neha Palak</span>
+      <span>April 2026</span>
+      <span>Census of India 2001 &amp; 2011</span>
+      <span>Prof. Lipika Dey</span>
+    </div>
+    <a class="dashboard-cta" href="/" target="_top">
+      Explore Live Dashboard
+    </a>
+  </div>
+</div>
+
+<!-- TAGS -->
+<div class="container" style="padding-top: 1.8rem; padding-bottom: 0;">
+  <span class="tag">LASSO Regression</span>
+  <span class="tag">Census of India</span>
+  <span class="tag">Child Marriage</span>
+  <span class="tag">Feature Selection</span>
+  <span class="tag">Social Policy</span>
+  <span class="tag">Scheduled Castes / Tribes</span>
+  <span class="tag">Python</span>
+  <span class="tag">React Dashboard</span>
+</div>
+
+<!-- TOC -->
+<div class="toc-wrap">
+  <h3>Contents</h3>
+  <ol>
+    <li><a href="#motivation">Motivation &amp; Research Questions</a></li>
+    <li><a href="#data">Data: Census of India</a></li>
+    <li><a href="#index">The CMPR Index</a></li>
+    <li><a href="#pipeline">Data Pipeline Architecture</a></li>
+    <li><a href="#modelling">Modelling with LASSO</a></li>
+    <li><a href="#findings">Key Findings</a></li>
+    <li><a href="#change">What Changed 2001→2011?</a></li>
+    <li><a href="#dashboard">The Dashboard</a></li>
+    <li><a href="#limitations">Limitations &amp; Caveats</a></li>
+    <li><a href="#conclusion">Conclusion</a></li>
+  </ol>
+</div>
+
+<!-- BODY CONTENT -->
+<div class="container">
+
+  <!-- 1. MOTIVATION -->
+  <section id="motivation">
+    <h2><span class="section-num">01 — Motivation</span>Why Does This Matter?</h2>
+    <p>Child marriage — any formal or informal union where at least one party is under 18 — remains a deeply entrenched crisis in South Asia. India alone is home to roughly <strong>a third of the world's child brides</strong>. Despite the Prohibition of Child Marriage Act (2006), enforcement gaps persist. The practice continues to cluster around poverty, educational exclusion, and social marginalisation in ways that are uneven and often invisible in aggregate national statistics.</p>
+
+    <div class="stat-row">
+      <div class="stat-card">
+        <div class="num">~⅓</div>
+        <div class="label">of world's child brides<br>are in India</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">35</div>
+        <div class="label">States &amp; Union<br>Territories analysed</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">15+</div>
+        <div class="label">Census sub-tables<br>integrated</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">130+</div>
+        <div class="label">Distinct metrics<br>constructed</div>
+      </div>
+    </div>
+
+    <p>This project asks two questions:</p>
+    <p><strong>Primary:</strong> What socio-economic, educational, religious, and demographic factors are the strongest predictors of child marriage rates across Indian states?</p>
+    <p><strong>Comparative:</strong> How did the relative importance of these factors shift between the 2001 and 2011 censuses — and do driver patterns differ across Scheduled Caste, Scheduled Tribe, and religious sub-populations?</p>
+
+    <div class="pullquote">
+      "An evidence-based, state-level view of these factors can inform policy interventions, prioritise resource allocation, and help NGOs identify the most vulnerable pockets of the population."
+    </div>
+
+    <p>By running separate LASSO models for each census year and each population sub-group, we move beyond a static snapshot. We ask not just <em>what predicts child marriage</em>, but <em>what changed over a decade</em> — and why.</p>
+  </section>
+
+  <!-- 2. DATA -->
+  <section id="data">
+    <h2><span class="section-num">02 — Data</span>The Census of India</h2>
+    <p>Our primary source is the <strong>Census of India</strong>, administered by the Office of the Registrar General &amp; Census Commissioner. We draw on two waves: the 2001 census as a historical baseline, and the 2011 census as the main analytical dataset, which provides individual-year age granularity and richer sub-group breakdowns.</p>
+
+    <div class="div rule-divider"></div>
+
+    <h3>Which tables did we use?</h3>
+    <p>The census is not a single clean table — it's a sprawling archive of sub-tables, each covering one intersection of population characteristic (marital status, education level, economic activity) × demographic group (general, SC, ST, religion) × geography (district / state). We integrate 15+ sub-tables:</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Table</th>
+            <th>Title</th>
+            <th>Role in This Project</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><code>C-02</code></td><td>Marital Status by Age and Sex</td><td>Core CMPR computation for general population</td></tr>
+          <tr><td><code>C-02 (SC/ST)</code></td><td>Same, for SC &amp; ST</td><td>CMPR for Scheduled Castes &amp; Tribes</td></tr>
+          <tr><td><code>C-03 Appendix</code></td><td>Marital Status by Religion, Age, Sex</td><td>Religion-stratified CMPR</td></tr>
+          <tr><td><code>C-08 / C-08 (SC/ST)</code></td><td>Educational Level by Age and Sex</td><td>Literacy, below-primary share, education indexes</td></tr>
+          <tr><td><code>C-09</code></td><td>Education Level by Religion and Sex</td><td>Community-level education predictors</td></tr>
+          <tr><td><code>C-12 / C-12 (SC/ST)</code></td><td>Attendance by Economic Activity (Ages 5–19)</td><td>Child labour + school attendance indexes</td></tr>
+          <tr><td><code>C-13, C-14, C-15</code></td><td>Age distributions, religious composition</td><td>Denominators, age-digit diagnostics</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>File structure and parsing challenges</h3>
+    <p>Each census table is distributed as one <code>.xls</code> file per state/UT. The 2001 files use the legacy binary <strong>BIFF8</strong> format (requiring <code>xlrd</code>), while 2011 files use the XML-based format (requiring <code>openpyxl</code>). Our pipeline auto-detects the engine from each file's magic bytes.</p>
+    <p>Within each file, the <strong>first 7 rows</strong> form a multi-row merged-cell header block — data begins at row 8, where each row encodes one geographic unit × area type × age group combination.</p>
+    <p>State names also required careful canonicalisation across two census waves that use different spellings and historical names ("Orissa" → "Odisha", "Uttaranchal" → "Uttarakhand", "Pondicherry" → "Puducherry" and so on).</p>
+  </section>
+
+  <!-- 3. INDEX -->
+  <section id="index">
+    <h2><span class="section-num">03 — Index Construction</span>The CMPR</h2>
+    <p>The central metric we construct is the <strong>Currently Married Proportion Rate (CMPR)</strong> — the share of individuals in a given population segment, sex, and age bracket who are currently married.</p>
+
+    <div class="formula">
+      CMPR<sub>s,g,b</sub> = ( Currently married in segment s, sex g, bracket b ) / ( Reference population for s, g ) × 100
+    </div>
+
+    <p>We compute CMPR across <strong>four canonical age brackets</strong>, chosen to align with policy definitions of child marriage:</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Bracket Label</th><th>Age Range</th><th>Policy Significance</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>age_below10</code></td><td>&lt; 10 years</td><td>Extreme early marriage</td></tr>
+          <tr><td><code>age_10_13</code></td><td>10–13 years</td><td>Severe child marriage</td></tr>
+          <tr><td><code>age_14_17</code></td><td>14–17 years</td><td><strong>Child marriage — below legal age</strong></td></tr>
+          <tr><td><code>age_18_21</code></td><td>18–21 years</td><td>Young adult marriage; transition zone</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <strong>⚠ Approximation Note</strong>
+      C-02 reports age in 5-year bands, so <code>age_10_13</code> maps to the "10–14" band (includes one extra year). C-08/C-12 provide individual-year rows for ages 7–19, so <code>age_18_21</code> captures only ages 18 and 19 from those tables.
+    </div>
+
+    <h3>Four DataFrames, four population slices</h3>
+    <p>We construct separate DataFrames for each population sub-group, each in <strong>long format</strong> (140 rows = 35 states/UTs × 4 age brackets):</p>
+    <ul style="padding-left:1.4rem; margin-bottom:1.2rem; font-size:0.88rem; line-height:2;">
+      <li><strong>df_total</strong> — general population (from C-02, C-06, C-07)</li>
+      <li><strong>df_SC</strong> — Scheduled Castes (from C-02 SC, C-08 SC, C-12 SC)</li>
+      <li><strong>df_ST</strong> — Scheduled Tribes (from C-02 ST, C-08 ST, C-12 ST)</li>
+      <li><strong>df_religion</strong> — six religious communities: Hindu, Muslim, Christian, Sikh, Buddhist, Jain (from C-03 Appendix, C-09)</li>
+    </ul>
+
+    <p>Together these produce <strong>130+ distinct metric columns</strong> covering literacy rates, below-primary education shares, school attendance rates, child labour indicators, and the CMPR itself at multiple demographic intersections.</p>
+  </section>
+
+  <!-- 4. PIPELINE -->
+  <section id="pipeline">
+    <h2><span class="section-num">04 — Engineering</span>Data Pipeline Architecture</h2>
+    <p>The entire pipeline is implemented in Python across five modules with a clear separation of concerns:</p>
+
+    <div class="pipeline">
+      <div class="pipe-step">
+        <div class="pipe-node"><span class="pn">utils.py</span>Shared Core</div>
+        <div class="pipe-desc">Constants (age bracket maps, canonical state names, folder paths), file I/O helpers, bracket-summing utilities, gender-split logic, safe division</div>
+      </div>
+      <div class="pipe-arrow">↓</div>
+      <div class="pipe-step">
+        <div class="pipe-node"><span class="pn">build_total.py</span>General Pop</div>
+        <div class="pipe-desc">Builds df_total from C-02, C-06, C-07; handles conditional CMPR by education level and economic activity</div>
+      </div>
+      <div class="pipe-arrow">↓</div>
+      <div class="pipe-step">
+        <div class="pipe-node"><span class="pn">build_SC/ST.py</span>SC &amp; ST</div>
+        <div class="pipe-desc">Builds df_SC and df_ST from sub-group census tables; computes school attendance, child labour, dropout rates</div>
+      </div>
+      <div class="pipe-arrow">↓</div>
+      <div class="pipe-step">
+        <div class="pipe-node"><span class="pn">build_religion.py</span>Communities</div>
+        <div class="pipe-desc">Builds df_religion from C-03 Appendix and C-09; derives 2001 religion CMPR separately via C-03 Appendix states CSV</div>
+      </div>
+      <div class="pipe-arrow">↓</div>
+      <div class="pipe-step">
+        <div class="pipe-node"><span class="pn">run_all.py</span>Orchestrator</div>
+        <div class="pipe-desc">CLI orchestrator; calls all builders, applies gender split, saves 12 CSV output files per census year</div>
+      </div>
+    </div>
+
+    <div class="rule-divider"></div>
+
+    <h3>Key pipeline steps</h3>
+
+    <div class="code-label">Python · build_total.py (simplified)</div>
+<pre><code><span class="cm"># 1. File discovery</span>
+files = glob_files(dataset_key=<span class="st">"C-02"</span>, root=DATA_ROOT)
+
+<span class="cm"># 2. Parse each state file</span>
+<span class="kw">for</span> path <span class="kw">in</span> files:
+    df = read_excel(path, skiprows=<span class="nm">7</span>, engine=<span class="fn">detect_engine</span>(path))
+    df = <span class="fn">pad_df</span>(df, expected_cols=COL_LIST)
+
+<span class="cm"># 3. Filter to state-level totals</span>
+df = df[(df[<span class="st">"district_code"</span>] == <span class="st">"000"</span>) &amp;
+        (df[<span class="st">"area_type"</span>] == <span class="st">"Total"</span>)]
+
+<span class="cm"># 4. Bracket summing (individual-year tables)</span>
+bracket_data = <span class="fn">sum_bracket</span>(df, bracket=<span class="st">"age_14_17"</span>,
+                             years=[<span class="nm">14</span>, <span class="nm">15</span>, <span class="nm">16</span>, <span class="nm">17</span>])
+
+<span class="cm"># 5. Safe ratio computation</span>
+cmpr = <span class="fn">safe_div</span>(currently_married, reference_pop) * <span class="nm">100</span>
+
+<span class="cm"># 6. Outer-merge all tables on GEO_KEYS</span>
+result = <span class="fn">reduce</span>(<span class="kw">lambda</span> a, b: a.<span class="fn">merge</span>(b, on=GEO_KEYS, how=<span class="st">"outer"</span>),
+                 table_dfs)
+
+<span class="cm"># 7. Gender split → save 3 CSVs per family</span>
+<span class="fn">gender_split</span>(result, out_dir=<span class="st">"output_datasets/"</span>)</code></pre>
+
+    <p>State name canonicalisation deserves special mention. A <code>resolve_state_name()</code> function maps raw census area label strings — often suffixed with numeric codes or using historical names — to a canonical list of 35 states and UTs:</p>
+
+<pre><code><span class="cm"># Examples handled by resolve_state_name()</span>
+<span class="st">"State – Andaman &amp; Nicobar Islands 35 "</span> → <span class="st">"Andaman &amp; Nicobar Islands"</span>
+<span class="st">"Orissa"</span>              → <span class="st">"Odisha"</span>
+<span class="st">"Uttaranchal"</span>         → <span class="st">"Uttarakhand"</span>
+<span class="st">"Pondicherry"</span>         → <span class="st">"Puducherry"</span>
+<span class="st">"Jammu and Kashmir"</span>   → <span class="st">"Jammu &amp; Kashmir"</span></code></pre>
+
+    <h3>Output files</h3>
+    <p>Running <code>run_all.py</code> produces <strong>twelve CSV files per census year</strong> (24 total), each in long format with 140 rows:</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>File</th><th>Rows</th><th>Contents</th></tr></thead>
+        <tbody>
+          <tr><td><code>df_total_state.csv</code></td><td>140</td><td>All general-pop indexes, both sexes</td></tr>
+          <tr><td><code>df_SC_state.csv</code></td><td>140</td><td>All SC indexes, both sexes</td></tr>
+          <tr><td><code>df_ST_state.csv</code></td><td>140</td><td>All ST indexes, both sexes</td></tr>
+          <tr><td><code>df_religion_state.csv</code></td><td>140</td><td>All religion-stratified indexes</td></tr>
+          <tr><td colspan="3" style="color:var(--ink-muted); font-style:italic;">+ male/female splits for each → 12 files per year</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 5. MODELLING -->
+  <section id="modelling">
+    <h2><span class="section-num">05 — Modelling</span>LASSO Regression</h2>
+
+    <h3>Why LASSO?</h3>
+    <p>With 15 candidate predictors and only ~35 state-level observations, ordinary least squares would be severely overfit. We use <strong>LASSO (Least Absolute Shrinkage and Selection Operator)</strong>, which applies an L1 penalty that automatically zeroes out weak or redundant predictors. The non-zero coefficients directly answer our question: <em>which variables are the strongest drivers?</em></p>
+    <p>LASSO is also well-suited here because census education variables are <strong>highly correlated</strong> (literacy rate and illiteracy rate are definitional complements). LASSO's L1 penalty shrinks one of a correlated pair toward zero, producing stable and interpretable solutions. The resulting coefficients are directly comparable in magnitude across variables — a coefficient of −4.3 on female SC literacy means a one-standard-deviation increase in that variable is associated with a 4.3-unit decrease in CMPR_SC_female.</p>
+
+    <div class="callout">
+      <strong>⚠ Critical Modelling Choice</strong>
+      df_total contains <em>conditional</em> CMPR rates (e.g., CMPR_illiterate_female). These are <strong>not</strong> independent predictors — they share the same denominator as the target, creating a tautological model if used as inputs. We use them only for education-gradient analysis. Only <em>structural</em> rates (literacy rate, dropout rate, child labour rate) are used as regression predictors in SC/ST/religion models.
+    </div>
+
+    <h3>Model specification and cross-validation</h3>
+    <p>The regularisation hyperparameter α is selected via <strong>Leave-One-Out Cross-Validation (LOO-CV)</strong>, which maximises training data at each fold — appropriate for n &lt; 40. All predictors are standardised to zero mean and unit variance, so coefficients are on a comparable scale.</p>
+
+    <div class="formula">
+      CMPR[d,g,b,y] = β₀ + Σⱼ βⱼxⱼ &nbsp;&nbsp; subject to &nbsp;&nbsp; Σⱼ |βⱼ| ≤ 1/α
+    </div>
+
+    <p>We fit one model per (group × gender × bracket × year) combination. The same specification is fit independently on 2001 and 2011 data, enabling year-on-year comparison of which predictors enter the model and at what coefficient magnitude.</p>
+
+    <div class="code-label">Python · cmpr_lasso_analysis.py (key implementation)</div>
+<pre><code><span class="kw">from</span> sklearn.linear_model <span class="kw">import</span> Lasso
+<span class="kw">from</span> sklearn.model_selection <span class="kw">import</span> LeaveOneOut, cross_val_score
+<span class="kw">import</span> numpy <span class="kw">as</span> np
+
+<span class="cm"># Alpha grid: 100 values log-spaced between 1e-3 and 1e2</span>
+alphas = np.<span class="fn">logspace</span>(<span class="nm">-3</span>, <span class="nm">2</span>, <span class="nm">100</span>)
+
+best_alpha, best_cv_r2 = <span class="nm">None</span>, <span class="nm">-np.inf</span>
+<span class="kw">for</span> alpha <span class="kw">in</span> alphas:
+    model = <span class="fn">Lasso</span>(alpha=alpha, max_iter=<span class="nm">20000</span>)
+    loo = <span class="fn">LeaveOneOut</span>()
+    scores = <span class="fn">cross_val_score</span>(model, X_std, y, cv=loo, scoring=<span class="st">"r2"</span>)
+    cv_r2 = np.<span class="fn">nanmean</span>(scores)  <span class="cm"># nanmean handles rare negative folds</span>
+    <span class="kw">if</span> cv_r2 > best_cv_r2:
+        best_cv_r2 = cv_r2
+        best_alpha = alpha
+
+<span class="cm"># Warn if alpha hit the ceiling (uninformative model)</span>
+<span class="kw">if</span> best_alpha == alphas[-<span class="nm">1</span>]:
+    <span class="fn">print</span>(<span class="st">f"⚠ Alpha ceiling hit for {group}-{year}: model uninformative"</span>)
+
+<span class="cm"># Fit final model on full data</span>
+final_model = <span class="fn">Lasso</span>(alpha=best_alpha, max_iter=<span class="nm">20000</span>).<span class="fn">fit</span>(X_std, y)
+coefs = dict(<span class="fn">zip</span>(feature_names, final_model.coef_))</code></pre>
+
+    <h3>Model performance summary</h3>
+    <p>The table below shows cross-validated R² for all models at the <code>age_14_17</code> bracket — the primary policy-relevant age range for child marriage:</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Dataset</th><th>Gender</th><th>Year</th><th>R² (train)</th><th>R² (CV)</th><th>Lead Predictors</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>SC</td><td>Female</td><td>2001</td><td>0.697</td><td class="good">0.549</td><td>Literacy (SC F), CL attending (SC F), Below primary (SC F)</td></tr>
+          <tr><td>SC</td><td>Female</td><td>2011</td><td>0.411</td><td class="warn">0.135</td><td>Below primary (SC F), CL dropout (SC M), Literacy (SC F)</td></tr>
+          <tr><td>ST</td><td>Female</td><td>2001</td><td>0.815</td><td class="good">0.711</td><td>CL attending (ST F), Literacy (ST F), Below primary (ST F)</td></tr>
+          <tr><td>ST</td><td>Female</td><td>2011</td><td>0.718</td><td class="good">0.556</td><td>Dropout (ST F), Below primary (ST F), CL attending (ST M)</td></tr>
+          <tr><td>Hindu</td><td>Female</td><td>2001</td><td>0.447</td><td>0.256</td><td>Literacy (Hindu F), Middle school (Hindu F)</td></tr>
+          <tr><td>Hindu</td><td>Female</td><td>2011</td><td>0.217</td><td class="warn">0.116</td><td>Literacy (Hindu F) only</td></tr>
+          <tr><td>Muslim</td><td>Female</td><td>2001</td><td>0.474</td><td>0.356</td><td>Below primary (Muslim F), Literacy (Muslim F)</td></tr>
+          <tr><td>Christian</td><td>Female</td><td>2001</td><td>0.657</td><td class="good">0.535</td><td>Middle school (Christian F), Below primary (Christian F)</td></tr>
+          <tr><td>Christian</td><td>Female</td><td>2011</td><td>0.364</td><td class="warn">0.128</td><td>Below primary (Christian F), Literacy (Christian F)</td></tr>
+          <tr><td>Total</td><td>Female</td><td>2011</td><td>0.051</td><td class="warn">−0.059</td><td>Literacy (Total F) — worse than predicting the mean</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>ST models achieve the best overall fit, while religion-based models and the total population model deteriorate significantly by 2011 — a finding we unpack below.</p>
+  </section>
+
+  <!-- 6. FINDINGS -->
+  <section id="findings">
+    <h2><span class="section-num">06 — Results</span>Key Findings</h2>
+
+    <div class="findings-grid">
+      <div class="finding">
+        <div class="finding-num">Finding 01</div>
+        <h4>Female literacy is the single most universal driver</h4>
+        <p>Female literacy rate appears in the selected predictor set for virtually every model, across all groups and both census years. Its coefficient is consistently negative — higher literacy predicts lower child marriage, for both female <em>and</em> male CMPR.</p>
+      </div>
+      <div class="finding">
+        <div class="finding-num">Finding 02</div>
+        <h4>SC: school attendance → male child labour dropout by 2011</h4>
+        <p>In 2001, SC girls who work <em>and</em> attend school had significantly lower marriage rates (β = −3.20). By 2011, this protection vanished — replaced by <em>male</em> child labour dropout (β = +1.21) as the dominant risk signal.</p>
+      </div>
+      <div class="finding">
+        <div class="finding-num">Finding 03</div>
+        <h4>ST models: best fit; below-primary share entrenched</h4>
+        <p>ST models achieve R²<sub>cv</sub> = 0.711 (2001) — the highest in the analysis. Below-primary share of ST females persists with β ≈ +1.7 in both 2001 and 2011, suggesting a structurally entrenched educational floor with no signs of weakening.</p>
+      </div>
+      <div class="finding">
+        <div class="finding-num">Finding 04</div>
+        <h4>Religion models: declining explanatory power in 2011</h4>
+        <p>CV R² fell sharply for all religion groups between the two waves (Hindu female: 0.256 → 0.116; Christian female: 0.535 → 0.128), suggesting that non-educational factors — urbanisation, economic mobility, religious law enforcement — gained importance.</p>
+      </div>
+    </div>
+
+    <h3>Female literacy predicts male child marriage too</h3>
+    <p>One of the more striking results: female literacy is nearly as strong a predictor of <em>male</em> child marriage rates as it is of female rates. This suggests that female literacy is not operating purely through individual women's agency or bargaining power. It appears to proxy for a <strong>broader household or community-level educational environment</strong> — a culture of schooling that delays marriage for all members.</p>
+
+    <h3>Male child labour dropout predicts female child marriage</h3>
+    <p>The Pearson correlation between <em>male</em> child labour dropout (SC) and <em>female</em> CMPR SC at age 14–17 is r = 0.55 — nearly as high as the female illiteracy correlation. This points to a <strong>joint household distress mechanism</strong>: when boys drop out of school to work, girls in the same household are married off. Policy interventions that target only girls' education may miss this household-level dynamic.</p>
+
+    <div class="pullquote">
+      "When boys drop out to work, girls are married off — a joint distress signal that cross-gender education statistics alone cannot reveal."
+    </div>
+  </section>
+
+  <!-- 7. CHANGE -->
+  <section id="change">
+    <h2><span class="section-num">07 — Temporal Analysis</span>What Changed, 2001 → 2011?</h2>
+
+    <p>The comparative analysis design fits <strong>identical model specifications on 2001 and 2011 data separately</strong>, then classifies each predictor as: <em>persistent</em> (non-zero in both years), <em>emerged</em> (zero in 2001, non-zero in 2011), or <em>dropped</em> (non-zero in 2001, zeroed in 2011).</p>
+
+    <div class="callout">
+      <strong>📚 Literature Note</strong>
+      The mechanisms behind these shifts — what structural changes in Indian society between 2001 and 2011 explain the move from school-attendance effects to household economic distress signals — require contextualisation from published social science research. This section will be expanded with a literature survey contextualising the NREGA period, the Right to Education Act (2009), changes in female labour force participation, and urbanisation trends. <em>[Pending — in progress]</em>
+    </div>
+
+    <h3>Universal coefficient attenuation</h3>
+    <p>With very few exceptions, persistent predictors show <strong>weaker coefficients in 2011 than in 2001</strong>. Literacy (SC F) went from β = −4.31 in 2001 to β = −0.72 in 2011. This could reflect:</p>
+    <ul style="padding-left:1.4rem; margin-bottom:1.2rem; font-size:0.88rem; line-height:2;">
+      <li><strong>Genuine progress:</strong> As child marriage rates fell across India between 2001 and 2011, the remaining variation is harder to explain with any single factor.</li>
+      <li><strong>Structural change:</strong> The mechanisms driving child marriage shifted, making 2001-era predictors less predictive of 2011 outcomes.</li>
+    </ul>
+
+    <h3>The SC/ST attendance-to-dropout shift</h3>
+    <p>Both SC and ST models show a parallel structural change: in 2001, <em>school attendance while working</em> (CL attending) was a strong <em>negative</em> predictor — girls who worked but still attended school had meaningfully lower marriage rates. By 2011, this protective effect had vanished entirely, replaced by school <em>dropout</em> as the dominant risk factor. This parallel across two independent sub-group models strengthens the interpretation considerably.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Group</th><th>2001 Top Predictor</th><th>β (2001)</th><th>2011 Top Predictor</th><th>β (2011)</th></tr></thead>
+        <tbody>
+          <tr><td>SC Female</td><td>Literacy (SC F)</td><td>−4.31</td><td>Below primary (SC F)</td><td>−0.72</td></tr>
+          <tr><td>SC Female</td><td>CL attending (SC F)</td><td>−3.20</td><td><em>Dropped</em></td><td>0</td></tr>
+          <tr><td>SC Female</td><td>—</td><td>—</td><td>CL dropout (SC M)</td><td>+1.21 (emerged)</td></tr>
+          <tr><td>ST Female</td><td>CL attending (ST F)</td><td>−6.55</td><td><em>Dropped</em></td><td>0</td></tr>
+          <tr><td>ST Female</td><td>—</td><td>—</td><td>Dropout (ST F)</td><td>+3.09 (emerged)</td></tr>
+          <tr><td>ST Female</td><td>Below primary (ST F)</td><td>+1.72</td><td>Below primary (ST F)</td><td>+1.66 (stable)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 8. DASHBOARD -->
+  <section id="dashboard">
+    <h2><span class="section-num">08 — Dashboard</span>Interactive Exploration</h2>
+    <p>All results are exposed through an interactive web dashboard, designed for non-technical users including NGO staff and policy researchers — no access to raw data or code required.</p>
+
+    <div class="dashboard-box">
+      <h4>CMPR Explorer Dashboard</h4>
+      <p>State-level choropleth maps · 2001 vs 2011 comparisons · LASSO coefficient explorer · Feature scatter plots · Downloadable filtered CSVs</p>
+      <div class="db-features">
+        <span class="db-badge">Choropleth Map</span>
+        <span class="db-badge">Year Comparison</span>
+        <span class="db-badge">SC / ST / Religion Toggle</span>
+        <span class="db-badge">LASSO Explorer</span>
+        <span class="db-badge">Scatter Plots</span>
+        <span class="db-badge">CSV Export</span>
+      </div>
+      <br>
+      <a class="db-link" href="/" target="_top">→ Open Dashboard</a>
+    </div>
+
+    <h3>Technology stack</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Layer</th><th>Technology</th><th>Role</th></tr></thead>
+        <tbody>
+          <tr><td>Frontend</td><td>React</td><td>Interactive visualisations, state controls, choropleth map</td></tr>
+          <tr><td>Backend</td><td>FastAPI</td><td>REST endpoints serving pre-processed CSV data as JSON</td></tr>
+          <tr><td>Data loading</td><td>Pipeline CSVs</td><td>Ingested at startup; served via API</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Dashboard features</h3>
+    <p>The dashboard exposes five main views. The <strong>choropleth map</strong> colours Indian states by CMPR at a user-selected age bracket, with controls to switch between total population, SC, ST, and religion sub-groups. The <strong>2001 vs. 2011 comparison</strong> renders side-by-side state rankings showing how each state's CMPR changed over the decade. The <strong>LASSO results explorer</strong> visualises which predictors were selected for each group and year, and their relative magnitudes — making the regression findings accessible without any statistical background. A <strong>feature correlation explorer</strong> allows scatter-plot comparison of any two indexes across all 35 states, and a <strong>CSV export</strong> lets analysts download filtered slices for their own analysis.</p>
+
+    <p>The integration is tight: findings discussed in this blog correspond directly to views in the dashboard. The claim that "CL dropout (SC M) emerged as a key predictor in 2011" can be verified interactively in the LASSO explorer by selecting the SC Female 2011 model.</p>
+  </section>
+
+  <!-- 9. LIMITATIONS -->
+  <section id="limitations">
+    <h2><span class="section-num">09 — Limitations</span>Caveats</h2>
+    <p>Honest data science requires surfacing its own blind spots. The key limitations of this analysis are:</p>
+
+    <div class="limitations">
+      <ol>
+        <li><strong>Age band mismatch.</strong> C-02's 5-year bands mean <code>age_10_13</code> includes age 14, and <code>age_14_17</code> excludes it. Some bracket labels are approximations.</li>
+        <li><strong>Partial age_18_21 coverage.</strong> In C-08/09/12, ages 20–21 are embedded in the "20–24" band and cannot be extracted, so this bracket covers only ages 18–19 from those sources.</li>
+        <li><strong>Small sample size.</strong> With 35 observations per bracket, all models are in a small-n regime. LOO-CV mitigates overfitting, but CV R² values — especially for religion models — should be treated as hypothesis-generating, not confirmatory.</li>
+        <li><strong>State-level aggregation.</strong> District-level variation, which may be substantial, is not captured. State averages can mask high-prevalence pockets.</li>
+        <li><strong>Cross-sectional data.</strong> The 2001–2011 comparison approximates a longitudinal design but does not constitute panel estimation; unobserved time-invariant state characteristics are not controlled for.</li>
+        <li><strong>Underreporting.</strong> Child marriage is illegal. Some incidence is almost certainly underreported in census responses; our CMPR values are lower bounds.</li>
+        <li><strong>CMPR as proxy.</strong> "Currently married" captures individuals married at any age who are in that state now — not necessarily those who married as children.</li>
+        <li><strong>Religion predictors limited to education.</strong> Occupation, income, and urbanisation — likely important for religion-based differences — are not available at the religion × state level in the census sub-tables used.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 10. CONCLUSION -->
+  <section id="conclusion">
+    <h2><span class="section-num">10 — Conclusion</span>What We Found</h2>
+    <p>This project constructs a comprehensive, multi-dimensional dataset of child marriage rates and their correlates across all Indian states, drawing on 15+ census sub-tables from the 2001 and 2011 waves. By computing CMPR stratified by sex, scheduled status, and religious community, we produce a state-level analytical resource that enables both descriptive comparison and formal regression modelling — and makes it all accessible through an interactive dashboard.</p>
+
+    <p>The LASSO analysis yields four substantive findings:</p>
+
+    <div class="findings-grid" style="margin-top:1.5rem;">
+      <div class="finding">
+        <div class="finding-num">✓ Finding 01</div>
+        <h4>Female literacy: universal and persistent</h4>
+        <p>The single most robust predictor of child marriage — across all groups, both years, and both target genders.</p>
+      </div>
+      <div class="finding">
+        <div class="finding-num">✓ Finding 02</div>
+        <h4>A decade-long mechanism shift for SC/ST</h4>
+        <p>School attendance was protective in 2001. By 2011, male child labour dropout had become the dominant risk signal — pointing to household economic distress.</p>
+      </div>
+      <div class="finding">
+        <div class="finding-num">✓ Finding 03</div>
+        <h4>ST: structurally entrenched below-primary share</h4>
+        <p>ST models fit best and show no sign of the below-primary education effect weakening over the decade.</p>
+      </div>
+      <div class="finding">
+        <div class="finding-num">✓ Finding 04</div>
+        <h4>Religion models: non-educational drivers gaining ground</h4>
+        <p>Sharply declining explanatory power in 2011 suggests factors beyond education — urbanisation, religious-legal contexts — became more important.</p>
+      </div>
+    </div>
+
+    <div class="pullquote">
+      "The mechanisms driving child marriage are not static. Any policy framework built only on a 2001-era understanding of the problem would miss the household economic distress signal that has since emerged."
+    </div>
+
+    <p>The analysis is complemented by an interactive dashboard at <a href="/" target="_top">/</a> that visualises CMPR patterns across states, brackets, and sub-groups for non-technical audiences, and exposes the LASSO coefficient comparisons as an explorable interface.</p>
+  </section>
+
+  <!-- AUTHOR -->
+  <div class="author-card">
+    <div class="author-avatar">A</div>
+    <div class="author-info">
+      <h4>Anand Agarwal</h4>
+      <p>Author · <a class="linkedin-link" href="https://www.linkedin.com/in/anand-agarwal-374761212/" target="_blank" rel="noopener noreferrer" aria-label="Anand Agarwal LinkedIn"><svg class="linkedin-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4.98 3.5C4.98 4.88 3.87 6 2.5 6S0 4.88 0 3.5 1.11 1 2.48 1s2.5 1.12 2.5 2.5zM.5 8h4V23h-4V8zm7 0h3.84v2.05h.05c.53-1 1.84-2.05 3.79-2.05C19.3 8 24 10.3 24 16.1V23h-4v-6.09c0-2.9-1.04-4.88-3.64-4.88-1.98 0-3.16 1.33-3.68 2.62-.19.46-.24 1.1-.24 1.74V23h-4V8z"/></svg></a></p>
+    </div>
+  </div>
+  <div class="author-card" style="margin-top:0.8rem;">
+    <div class="author-avatar">N</div>
+    <div class="author-info">
+      <h4>Neha Palak</h4>
+      <p>Author · <a class="linkedin-link" href="https://www.linkedin.com/in/neha-palak/" target="_blank" rel="noopener noreferrer" aria-label="Neha Palak LinkedIn"><svg class="linkedin-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4.98 3.5C4.98 4.88 3.87 6 2.5 6S0 4.88 0 3.5 1.11 1 2.48 1s2.5 1.12 2.5 2.5zM.5 8h4V23h-4V8zm7 0h3.84v2.05h.05c.53-1 1.84-2.05 3.79-2.05C19.3 8 24 10.3 24 16.1V23h-4v-6.09c0-2.9-1.04-4.88-3.64-4.88-1.98 0-3.16 1.33-3.68 2.62-.19.46-.24 1.1-.24 1.74V23h-4V8z"/></svg></a></p>
+    </div>
+  </div>
+
+
+</div><!-- /container -->
+
+<footer>
+  © 2026 Anand Agarwal &amp; Neha Palak · Ashoka University, Dept. of Computer Science · CS-3510 · All data from Census of India (public domain)
+</footer>
+
+</body>
+</html>
