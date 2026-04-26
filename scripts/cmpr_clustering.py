@@ -24,7 +24,6 @@ HOW TO RUN:
   Outputs saved to: regression_outputs/clustering/
 """
 
-import os
 import pandas as pd
 import numpy as np
 import matplotlib
@@ -36,6 +35,9 @@ from scipy.spatial.distance import pdist
 from sklearn.preprocessing import StandardScaler
 import warnings
 warnings.filterwarnings('ignore')
+import sys
+import os
+from datetime import datetime
 
 # ── Paths — must match cmpr_lasso_analysis.py ─────────────────────────────────
 SC_PATH_2001      = 'output_datasets_2001/df_SC_state_2001.csv'
@@ -690,4 +692,16 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    os.makedirs('regression_outputs', exist_ok=True)
+
+    log_path = f"regression_outputs/clustering_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+
+    with open(log_path, "w") as f:
+        original_stdout = sys.stdout
+        sys.stdout = f  # redirect prints to file
+        try:
+            main()
+        finally:
+            sys.stdout = original_stdout  # restore stdout
+
+    print(f"Log saved to: {log_path}")
