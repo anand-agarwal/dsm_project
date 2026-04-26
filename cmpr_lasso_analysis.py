@@ -4,11 +4,11 @@ CMPR LASSO Analysis — 2001 vs 2011 Comparison Framework
 This script runs LASSO regression separately on each year's data,
 then produces a side-by-side comparison of which predictors changed.
 
-Key fixes vs previous version:
-  1. Religion CMPR for 2001 computed from raw C-03_Appendix_states.csv
-  2. Religion CONFIGS now use group-specific targets (CMPR_hindu_female etc.)
-  3. R²_cv uses np.nanmean to avoid NaN from LOO negative folds
-  4. Stale comments and path references removed
+Key notes:
+  1. Religion CMPR for 2001 is pre-computed — run append_religion_cmpr_2001.py
+     once to update df_religion_state_2001.csv before running this script.
+  2. Religion CONFIGS use group-specific targets (CMPR_hindu_female etc.)
+  3. R²_cv is computed via manual LOO to avoid sklearn NaN propagation.
 """
 
 import pandas as pd
@@ -42,11 +42,7 @@ TOTAL_PATH_2011   = 'output_datasets_2011/df_total_state_2011.csv'
 # Total population files
 TOTAL_PATH_2001   = 'output_datasets_2001/df_total_state_2001.csv'
 
-# Raw 2001 census file — used to compute religion-specific CMPR for 2001
-# (df_religion_state_2001.csv has no CMPR columns; they must be derived here)
-RAW_2001_APPENDIX = 'raw_data/2001/C-03_Appendix_states.csv'
-
-OUT_DIR = 'regression_outputs/'
+OUT_DIR = 'regression_outputs/lasso/'
 
 # ── Predictor / target config per dataset ─────────────────────────────────────
 CONFIGS = {
@@ -170,44 +166,6 @@ SHORT_NAMES = {
     'Below_primary_share_total_female':     'Below primary (Total F)',
     'Below_primary_share_total_male':       'Below primary (Total M)',
 }
-
-
-# ── Religion CMPR helper (2001 only) ──────────────────────────────────────────
-
-def compute_religion_cmpr_2001(raw_path):
-    """
-    Computes religion-specific CMPR from C-03_Appendix_states.csv (2001 raw census).
-
-    The 'Less than 18' age group in the raw file maps directly to the
-    age_14_17 bracket used in the rest of the pipeline.
-
-    Formula: CMPR = (married females/males under 18) / (total females/males under 18) × 1000
-
-    Returns a wide DataFrame: state_code + CMPR_{religion}_{gender} columns,
-    ready to merge into df_religion_state_2001 on 'state_code'.
-    """
-    df_raw = pd.read_csv(raw_path)
-
-    religions = ['Hindu', 'Muslim', 'Christian', 'Sikh', 'Buddhist', 'Jain']
-    df_f = df_raw[
-        (df_raw['Total/ | Rural/ | Urban/'] == 'Total') &
-        (df_raw['Age- | group | 1'] == 'Less than 18') &
-        (df_raw['Religion'].isin(religions))
-    ].copy()
-
-    df_f['state_code'] = df_f['State | Code'].astype(int)
-    df_f['CMPR_female'] = (df_f['Females | 10'] / df_f['Females | 4'] * 1000).round(4)
-    df_f['CMPR_male']   = (df_f['Males | 9']    / df_f['Males | 3']   * 1000).round(4)
-    df_f['rel'] = df_f['Religion'].str.lower()
-
-    cmpr_wide = df_f.pivot_table(
-        index='state_code', columns='rel',
-        values=['CMPR_female', 'CMPR_male'], aggfunc='first'
-    )
-    cmpr_wide.columns = [
-        f'CMPR_{rel}_{g.split("_")[1]}' for g, rel in cmpr_wide.columns
-    ]
-    return cmpr_wide.reset_index()
 
 
 # ── Core LASSO function ────────────────────────────────────────────────────────
@@ -719,15 +677,11 @@ def main():
     df_total_2011 = pd.read_csv(TOTAL_PATH_2011)
 
     # ── Load religion files ─────────────────────────────────────────────────
-    # 2011: already has CMPR_hindu_female, CMPR_muslim_female, etc.
+    # Both files now have CMPR columns — 2001 was updated by
+    # append_religion_cmpr_2001.py, 2011 had them originally.
+    df_rel_2001 = pd.read_csv(REL_PATH_2001)
     df_rel_2011 = pd.read_csv(REL_PATH_2011)
-
-    # 2001: CMPR columns are missing — compute from raw census and merge in
-    cmpr_2001 = compute_religion_cmpr_2001(RAW_2001_APPENDIX)
-    df_rel_2001 = pd.read_csv(REL_PATH_2001).merge(
-        cmpr_2001, on='state_code', how='left'
-    )
-    print(f"\n  Religion 2001 CMPR columns added: "
+    print(f"\n  Religion 2001 CMPR columns: "
           f"{[c for c in df_rel_2001.columns if c.startswith('CMPR_')]}")
 
     BRACKET = 'age_14_17'

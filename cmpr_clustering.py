@@ -15,6 +15,9 @@ Approach:
   - Final plot: CMPR_total cross-group clustering (SC/ST/Hindu/Muslim/Christian
     CMPR simultaneously) to show inter-group disparity patterns by state
 
+NOTE: Run append_religion_cmpr_2001.py once before this script to ensure
+  df_religion_state_2001.csv has CMPR columns pre-appended.
+
 HOW TO RUN:
   python3 cmpr_clustering.py
 
@@ -44,8 +47,6 @@ SC_PATH_2011      = 'output_datasets_2011/df_SC_state_2011.csv'
 ST_PATH_2011      = 'output_datasets_2011/df_ST_state_2011.csv'
 REL_PATH_2011     = 'output_datasets_2011/df_religion_state_2011.csv'
 TOTAL_PATH_2011   = 'output_datasets_2011/df_total_state_2011.csv'
-
-RAW_2001_APPENDIX = 'raw_data/2001/C-03_Appendix_states.csv'
 
 OUT_DIR = 'regression_outputs/clustering/'
 os.makedirs(OUT_DIR, exist_ok=True)
@@ -107,7 +108,7 @@ CLUSTER_FEATURES = {
         'label': 'ST Male CMPR',
     },
     'Hindu_female': {
-        'path_2001': None,   # religion 2001 loaded separately (needs merge)
+        'path_2001': REL_PATH_2001,
         'path_2011': REL_PATH_2011,
         'predictors': [
             'Literacy_rate_hindu_female',
@@ -118,7 +119,7 @@ CLUSTER_FEATURES = {
         'label': 'Hindu Female CMPR',
     },
     'Muslim_female': {
-        'path_2001': None,
+        'path_2001': REL_PATH_2001,
         'path_2011': REL_PATH_2011,
         'predictors': [
             'Below_primary_share_muslim_female',
@@ -129,7 +130,7 @@ CLUSTER_FEATURES = {
         'label': 'Muslim Female CMPR',
     },
     'Christian_female': {
-        'path_2001': None,
+        'path_2001': REL_PATH_2001,
         'path_2011': REL_PATH_2011,
         'predictors': [
             'Below_primary_share_christian_female',
@@ -193,30 +194,6 @@ SHORT_NAMES = {
 CLUSTER_COLORS = ['#D05538', '#1D6A9E', '#2E9E6A', '#E8A020', '#7B52AB', '#888888']
 
 
-# ── Religion 2001 helper (same as LASSO script) ───────────────────────────────
-
-def load_religion_2001(raw_path, rel_path):
-    """Load religion 2001 CSV and merge in CMPR columns from raw census."""
-    df_raw = pd.read_csv(raw_path)
-    religions = ['Hindu', 'Muslim', 'Christian', 'Sikh', 'Buddhist', 'Jain']
-    df_f = df_raw[
-        (df_raw['Total/ | Rural/ | Urban/'] == 'Total') &
-        (df_raw['Age- | group | 1'] == 'Less than 18') &
-        (df_raw['Religion'].isin(religions))
-    ].copy()
-    df_f['state_code'] = df_f['State | Code'].astype(int)
-    df_f['CMPR_female'] = (df_f['Females | 10'] / df_f['Females | 4'] * 1000).round(4)
-    df_f['CMPR_male']   = (df_f['Males | 9']    / df_f['Males | 3']   * 1000).round(4)
-    df_f['rel'] = df_f['Religion'].str.lower()
-    cmpr_wide = df_f.pivot_table(
-        index='state_code', columns='rel',
-        values=['CMPR_female', 'CMPR_male'], aggfunc='first'
-    )
-    cmpr_wide.columns = [f'CMPR_{rel}_{g.split("_")[1]}' for g, rel in cmpr_wide.columns]
-    cmpr_wide = cmpr_wide.reset_index()
-    return pd.read_csv(rel_path).merge(cmpr_wide, on='state_code', how='left')
-
-
 # ── Data preparation ───────────────────────────────────────────────────────────
 
 def prepare_cluster_data(df, predictors, target, bracket=BRACKET):
@@ -237,7 +214,7 @@ def prepare_cluster_data(df, predictors, target, bracket=BRACKET):
 
 # ── Core clustering ───────────────────────────────────────────────────────────
 
-def run_clustering(X, states, n_clusters=3, method='ward'):
+def run_clustering(X, states, n_clusters=5, method='ward'):
     """
     Ward linkage hierarchical clustering.
     Returns: linkage matrix Z, cluster labels (1-indexed), dendrogram order.
@@ -666,8 +643,8 @@ def main():
     df_st_2011    = pd.read_csv(ST_PATH_2011)
     df_total_2001 = pd.read_csv(TOTAL_PATH_2001)
     df_total_2011 = pd.read_csv(TOTAL_PATH_2011)
+    df_rel_2001   = pd.read_csv(REL_PATH_2001)   # CMPR columns pre-appended
     df_rel_2011   = pd.read_csv(REL_PATH_2011)
-    df_rel_2001   = load_religion_2001(RAW_2001_APPENDIX, REL_PATH_2001)
 
     # Map dataset keys to (df_2001, df_2011) — None means not available
     DATA_MAP = {
