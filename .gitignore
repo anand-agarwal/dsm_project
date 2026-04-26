@@ -5,3 +5,4 @@ neha_experiments/
 __pycache__
 census_2001_sorted/
 .DS_Store
+.vercel
