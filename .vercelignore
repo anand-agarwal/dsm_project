@@ -8,10 +8,13 @@ venv
 __pycache__
 node_modules
 frontend/node_modules
+census_2001_sorted
+census_downloads_2011
 raw_data
 output_datasets_2001
 output_datasets_2011
 regression_outputs
+supabase
 supabase/.temp
 supabase/.branches
 supabase/.cache
