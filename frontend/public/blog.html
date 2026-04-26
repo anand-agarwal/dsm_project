@@ -623,6 +623,130 @@
   .hero-inner > *:nth-child(3) { animation-delay: 0.34s; }
   .hero-inner > *:nth-child(4) { animation-delay: 0.46s; }
   .hero-inner > *:nth-child(5) { animation-delay: 0.58s; }
+
+  /* ── REFERENCES ── */
+  .ref-list { margin: 1.5rem 0; }
+  .ref-item {
+    display: flex;
+    gap: 1rem;
+    padding: 0.9rem 0;
+    border-bottom: 1px solid var(--rule);
+    font-size: 0.84rem;
+    line-height: 1.65;
+    align-items: flex-start;
+  }
+  .ref-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--accent);
+    font-weight: 500;
+    flex-shrink: 0;
+    padding-top: 0.15rem;
+    min-width: 2.4rem;
+  }
+  .ref-body em { font-style: italic; }
+  .ref-doi {
+    display: inline-block;
+    margin-left: 0.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.06em;
+    color: var(--accent-gold);
+    text-decoration: none;
+  }
+  .ref-doi:hover { text-decoration: underline; }
+  .ref-link {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--accent-gold);
+    text-decoration: none;
+    vertical-align: super;
+    font-size: 0.6rem;
+    margin-left: 0.1rem;
+  }
+  .ref-link:hover { text-decoration: underline; }
+
+  /* ── FIGURE / CHART PLACEHOLDERS ── */
+  .figure-box {
+    background: var(--paper-dark);
+    border: 1px solid var(--rule);
+    border-top: 3px solid var(--accent-gold);
+    padding: 1.5rem 1.6rem;
+    margin: 2rem 0;
+    border-radius: 2px;
+  }
+  .figure-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent-gold);
+    margin-bottom: 0.6rem;
+  }
+  .figure-box p {
+    font-size: 0.84rem;
+    color: var(--ink-light);
+    line-height: 1.65;
+    margin: 0;
+  }
+  .figure-box strong { color: var(--ink); }
+
+  /* ── BLOG FIGURES (real images) ── */
+  .blog-figure {
+    margin: 2.5rem 0;
+    border: 1px solid var(--rule);
+    border-top: 3px solid var(--accent-gold);
+    background: var(--paper-dark);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .blog-figure img {
+    width: 100%;
+    display: block;
+  }
+  .blog-figure figcaption {
+    padding: 0.9rem 1.2rem;
+    font-size: 0.78rem;
+    color: var(--ink-muted);
+    line-height: 1.6;
+    font-family: 'Source Serif 4', serif;
+    border-top: 1px solid var(--rule);
+  }
+  .blog-figure figcaption strong {
+    color: var(--ink-light);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+  }
+
+  /* ── CONCLUSION LIST ── */
+  .conclusion-list {
+    padding-left: 1.4rem;
+    margin: 1.8rem 0;
+    counter-reset: cl;
+    list-style: none;
+  }
+  .conclusion-list li {
+    counter-increment: cl;
+    position: relative;
+    padding: 0.9rem 0 0.9rem 0;
+    border-bottom: 1px solid var(--rule);
+    font-size: 0.9rem;
+    line-height: 1.75;
+    padding-left: 2.4rem;
+  }
+  .conclusion-list li::before {
+    content: counter(cl, decimal-leading-zero);
+    position: absolute;
+    left: 0;
+    top: 0.95rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem;
+    color: var(--accent);
+    font-weight: 500;
+    letter-spacing: 0.06em;
+  }
+  .conclusion-list li strong { color: var(--ink); }
 </style>
 </head>
 <body>
@@ -635,7 +759,7 @@
 <!-- HERO -->
 <div class="hero">
   <div class="hero-inner">
-    <div class="hero-kicker">Data Science &amp; Public Policy</div>
+    <div class="hero-kicker">Data Science &amp; Management</div>
     <h1>Child Marriage<br>in <em>India</em></h1>
     <p class="hero-sub">A data-driven investigation into the socio-economic drivers of child marriage across Indian states, using Census 2001 and 2011 microdata, LASSO regression, and an interactive state-level dashboard.</p>
     <div class="hero-meta">
@@ -673,9 +797,11 @@
     <li><a href="#modelling">Modelling with LASSO</a></li>
     <li><a href="#findings">Key Findings</a></li>
     <li><a href="#change">What Changed 2001→2011?</a></li>
+    <li><a href="#clustering">Clustering Analysis</a></li>
     <li><a href="#dashboard">The Dashboard</a></li>
     <li><a href="#limitations">Limitations &amp; Caveats</a></li>
     <li><a href="#conclusion">Conclusion</a></li>
+    <li><a href="#references">References</a></li>
   </ol>
 </div>
 
@@ -965,32 +1091,42 @@ coefs = dict(<span class="fn">zip</span>(feature_names, final_model.coef_))</cod
 
     <div class="findings-grid">
       <div class="finding">
-        <div class="finding-num">Finding 01</div>
-        <h4>Female literacy is the single most universal driver</h4>
-        <p>Female literacy rate appears in the selected predictor set for virtually every model, across all groups and both census years. Its coefficient is consistently negative — higher literacy predicts lower child marriage, for both female <em>and</em> male CMPR.</p>
+        <div class="finding-num">LASSO Finding 01</div>
+        <h4>Female literacy: the single most universal driver</h4>
+        <p>Appears in every model across all groups and both census years. Literacy (Total F): β = −4.90 in 2001. Literacy (SC F): β = −4.31. Its coefficient is consistently negative — higher literacy predicts lower child marriage, for both female <em>and</em> male CMPR <a href="#ref1" class="ref-link">[1]</a><a href="#ref4" class="ref-link">[4]</a>.</p>
       </div>
       <div class="finding">
-        <div class="finding-num">Finding 02</div>
-        <h4>SC: school attendance → male child labour dropout by 2011</h4>
-        <p>In 2001, SC girls who work <em>and</em> attend school had significantly lower marriage rates (β = −3.20). By 2011, this protection vanished — replaced by <em>male</em> child labour dropout (β = +1.21) as the dominant risk signal.</p>
+        <div class="finding-num">LASSO Finding 02</div>
+        <h4>SC: attendance → male dropout shift by 2011</h4>
+        <p>In 2001, SC girls who work <em>and</em> attend school had lower marriage rates (β = −3.20). By 2011, that protection had gone — replaced by male child labour dropout (β = +1.21) as the dominant risk signal <a href="#ref1" class="ref-link">[1]</a>.</p>
       </div>
       <div class="finding">
-        <div class="finding-num">Finding 03</div>
-        <h4>ST models: best fit; below-primary share entrenched</h4>
-        <p>ST models achieve R²<sub>cv</sub> = 0.711 (2001) — the highest in the analysis. Below-primary share of ST females persists with β ≈ +1.7 in both 2001 and 2011, suggesting a structurally entrenched educational floor with no signs of weakening.</p>
+        <div class="finding-num">LASSO Finding 03</div>
+        <h4>ST models: best fit; below-primary entrenched</h4>
+        <p>ST models achieve R²<sub>cv</sub> = 0.711 — the highest in the analysis. CL attending (ST F) had β = −6.55 in 2001, the largest coefficient in the entire study. Below-primary share of ST females persists with β ≈ +1.7 in both years <a href="#ref3" class="ref-link">[3]</a><a href="#ref4" class="ref-link">[4]</a>.</p>
       </div>
       <div class="finding">
-        <div class="finding-num">Finding 04</div>
-        <h4>Religion models: declining explanatory power in 2011</h4>
-        <p>CV R² fell sharply for all religion groups between the two waves (Hindu female: 0.256 → 0.116; Christian female: 0.535 → 0.128), suggesting that non-educational factors — urbanisation, economic mobility, religious law enforcement — gained importance.</p>
+        <div class="finding-num">LASSO Finding 04</div>
+        <h4>Religion models: group-specific single predictors</h4>
+        <p>By 2011, each religion reduces to one predictor: female literacy for Hindus; below-primary share for Muslims (β = +2.71, the strongest 2011 religion predictor); sign-reversing below-primary for Christians <a href="#ref4" class="ref-link">[4]</a>.</p>
+      </div>
+      <div class="finding">
+        <div class="finding-num">LASSO Finding 05</div>
+        <h4>Universal coefficient attenuation 2001 → 2011</h4>
+        <p>Every persistent predictor weakened between the two waves — except Below primary (ST F), which barely moved (+1.72 → +1.66). The Total female model's CV R² fell from 0.238 to −0.059 <a href="#ref2" class="ref-link">[2]</a><a href="#ref5" class="ref-link">[5]</a>.</p>
       </div>
     </div>
 
     <h3>Female literacy predicts male child marriage too</h3>
-    <p>One of the more striking results: female literacy is nearly as strong a predictor of <em>male</em> child marriage rates as it is of female rates. This suggests that female literacy is not operating purely through individual women's agency or bargaining power. It appears to proxy for a <strong>broader household or community-level educational environment</strong> — a culture of schooling that delays marriage for all members.</p>
+    <p>One of the more striking results: female literacy is nearly as strong a predictor of <em>male</em> child marriage rates as it is of female rates. This suggests it is not operating purely through individual women's agency but proxies a <strong>broader community-level educational environment</strong> — a culture of schooling that delays marriage for all members <a href="#ref1" class="ref-link">[1]</a><a href="#ref4" class="ref-link">[4]</a>.</p>
+
+    <figure class="blog-figure">
+      <img src="/figures/lasso_3.png" alt="Cross-dataset LASSO coefficient heatmap: Female CMPR 2011">
+      <figcaption><strong>Figure 1 —</strong> Cross-dataset LASSO coefficient heatmap, Female CMPR 2011. Each column is one population group (SC, ST, Hindu, Muslim, Christian, Total). Blue = protective predictor, red/orange = risk factor, white = zeroed by LASSO. The diagonal block structure makes group-specificity immediately visible.</figcaption>
+    </figure>
 
     <h3>Male child labour dropout predicts female child marriage</h3>
-    <p>The Pearson correlation between <em>male</em> child labour dropout (SC) and <em>female</em> CMPR SC at age 14–17 is r = 0.55 — nearly as high as the female illiteracy correlation. This points to a <strong>joint household distress mechanism</strong>: when boys drop out of school to work, girls in the same household are married off. Policy interventions that target only girls' education may miss this household-level dynamic.</p>
+    <p>The Pearson correlation between <em>male</em> child labour dropout (SC) and <em>female</em> CMPR SC at age 14–17 is r = 0.55 — nearly as high as the female illiteracy correlation. This points to a <strong>joint household distress mechanism</strong>: when boys drop out of school to work, girls in the same household are married off. Policy interventions targeting only girls' education may miss this entirely <a href="#ref1" class="ref-link">[1]</a>.</p>
 
     <div class="pullquote">
       "When boys drop out to work, girls are married off — a joint distress signal that cross-gender education statistics alone cannot reveal."
@@ -1003,39 +1139,180 @@ coefs = dict(<span class="fn">zip</span>(feature_names, final_model.coef_))</cod
 
     <p>The comparative analysis design fits <strong>identical model specifications on 2001 and 2011 data separately</strong>, then classifies each predictor as: <em>persistent</em> (non-zero in both years), <em>emerged</em> (zero in 2001, non-zero in 2011), or <em>dropped</em> (non-zero in 2001, zeroed in 2011).</p>
 
-    <div class="callout">
-      <strong>📚 Literature Note</strong>
-      The mechanisms behind these shifts — what structural changes in Indian society between 2001 and 2011 explain the move from school-attendance effects to household economic distress signals — require contextualisation from published social science research. This section will be expanded with a literature survey contextualising the NREGA period, the Right to Education Act (2009), changes in female labour force participation, and urbanisation trends. <em>[Pending — in progress]</em>
-    </div>
+    <h3>Macro context: India 2001–2011</h3>
+    <p>The decade between the two censuses was one of significant — but uneven — transformation. National literacy rose from 64.8% to 74.0%, with female literacy increasing from 53.7% to 65.5%, and the male–female literacy gap narrowing from 21.6 to 16.7 percentage points <a href="#ref3" class="ref-link">[3]</a>. GDP growth averaged 6–8% per year, but gains were unevenly distributed, with persistent rural and lower-caste deprivation shaping household decisions around schooling and child marriage <a href="#ref2" class="ref-link">[2]</a><a href="#ref5" class="ref-link">[5]</a>. Programmes like the Sarva Shiksha Abhiyan reduced spatial gradients in school attendance, compressing between-state variation in literacy — which directly explains the weakened predictive power of literacy in 2011 models.</p>
 
     <h3>Universal coefficient attenuation</h3>
-    <p>With very few exceptions, persistent predictors show <strong>weaker coefficients in 2011 than in 2001</strong>. Literacy (SC F) went from β = −4.31 in 2001 to β = −0.72 in 2011. This could reflect:</p>
-    <ul style="padding-left:1.4rem; margin-bottom:1.2rem; font-size:0.88rem; line-height:2;">
-      <li><strong>Genuine progress:</strong> As child marriage rates fell across India between 2001 and 2011, the remaining variation is harder to explain with any single factor.</li>
-      <li><strong>Structural change:</strong> The mechanisms driving child marriage shifted, making 2001-era predictors less predictive of 2011 outcomes.</li>
-    </ul>
-
-    <h3>The SC/ST attendance-to-dropout shift</h3>
-    <p>Both SC and ST models show a parallel structural change: in 2001, <em>school attendance while working</em> (CL attending) was a strong <em>negative</em> predictor — girls who worked but still attended school had meaningfully lower marriage rates. By 2011, this protective effect had vanished entirely, replaced by school <em>dropout</em> as the dominant risk factor. This parallel across two independent sub-group models strengthens the interpretation considerably.</p>
+    <p>With very few exceptions, persistent predictors show <strong>weaker coefficients in 2011 than in 2001</strong>. This is a system-wide pattern pointing to two simultaneous processes: genuine progress as average CMPR fell across states, and structural change that made single-factor explanations less adequate. The Total female model is the extreme case — CV R² collapsed from 0.238 in 2001 to −0.059 in 2011, literally worse than predicting the mean.</p>
 
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Group</th><th>2001 Top Predictor</th><th>β (2001)</th><th>2011 Top Predictor</th><th>β (2011)</th></tr></thead>
+        <thead><tr><th>Predictor</th><th>Target</th><th>β 2001</th><th>β 2011</th><th>Change</th></tr></thead>
         <tbody>
-          <tr><td>SC Female</td><td>Literacy (SC F)</td><td>−4.31</td><td>Below primary (SC F)</td><td>−0.72</td></tr>
-          <tr><td>SC Female</td><td>CL attending (SC F)</td><td>−3.20</td><td><em>Dropped</em></td><td>0</td></tr>
-          <tr><td>SC Female</td><td>—</td><td>—</td><td>CL dropout (SC M)</td><td>+1.21 (emerged)</td></tr>
-          <tr><td>ST Female</td><td>CL attending (ST F)</td><td>−6.55</td><td><em>Dropped</em></td><td>0</td></tr>
-          <tr><td>ST Female</td><td>—</td><td>—</td><td>Dropout (ST F)</td><td>+3.09 (emerged)</td></tr>
-          <tr><td>ST Female</td><td>Below primary (ST F)</td><td>+1.72</td><td>Below primary (ST F)</td><td>+1.66 (stable)</td></tr>
+          <tr><td>Literacy (SC F)</td><td>SC female</td><td>−4.31</td><td>−0.72</td><td class="warn">−3.59</td></tr>
+          <tr><td>Literacy (SC F)</td><td>SC male</td><td>−2.35</td><td>−0.85</td><td class="warn">−1.50</td></tr>
+          <tr><td>Literacy (Total F)</td><td>Total female</td><td>−4.90</td><td>−0.99</td><td class="warn">−3.91</td></tr>
+          <tr><td>Literacy (Total F)</td><td>Total male</td><td>−2.35</td><td>−1.08</td><td class="warn">−1.27</td></tr>
+          <tr><td>Literacy (Hindu F)</td><td>Hindu female</td><td>−3.12</td><td>−2.19</td><td>−0.93</td></tr>
+          <tr><td>Below primary (ST F)</td><td>ST female</td><td>+1.72</td><td>+1.66</td><td class="good">−0.06 (stable)</td></tr>
+          <tr><td>Below primary (Muslim F)</td><td>Muslim female</td><td>+3.05</td><td>+2.71</td><td>−0.34</td></tr>
         </tbody>
       </table>
     </div>
+
+    <p><strong>Below primary (ST F) is the notable exception to attenuation</strong>: its coefficient barely moved (+1.72 → +1.66), confirming that the ST below-primary educational deficit is not resolving over time — an entrenched, invariant structural risk that no amount of macro-level progress has yet dislodged <a href="#ref4" class="ref-link">[4]</a>.</p>
+
+    <h3>The SC/ST attendance-to-dropout shift</h3>
+    <p>Both SC and ST models show a parallel structural change: in 2001, <em>school attendance while working</em> (CL attending) was a strong <em>negative</em> predictor — girls who worked but still attended school had meaningfully lower marriage rates. By 2011, this protective effect had vanished entirely, replaced by school <em>dropout</em> as the dominant risk signal. This parallel across two independent sub-group models strengthens the interpretation considerably.</p>
+
+    <div class="callout">
+      <strong>💡 The Mechanism Shift</strong>
+      In 2001, keeping a girl in school — even in a working household — was enough to reduce marriage probability. By 2011, household-level economic stress had deepened to the point where a boy's complete exit from education triggered a marriage decision for the girl. This is a <strong>joint household distress pathway</strong>, not a girl-specific educational pathway <a href="#ref1" class="ref-link">[1]</a><a href="#ref4" class="ref-link">[4]</a>. Policy interventions targeting only girls' school attendance may miss this inter-gender household dynamic.
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Group</th><th>2001 Dominant Predictor</th><th>β (2001)</th><th>2011 Status</th><th>β (2011)</th></tr></thead>
+        <tbody>
+          <tr><td>SC Female</td><td>Literacy (SC F)</td><td>−4.31</td><td>Persistent, weakened</td><td>−0.72</td></tr>
+          <tr><td>SC Female</td><td>CL attending (SC F)</td><td>−3.20</td><td class="warn">Dropped entirely</td><td>0</td></tr>
+          <tr><td>SC Female</td><td>—</td><td>—</td><td class="good">New: CL dropout (SC M)</td><td>+1.21</td></tr>
+          <tr><td>ST Female</td><td>CL attending (ST F)</td><td>−6.55</td><td class="warn">Dropped entirely</td><td>0</td></tr>
+          <tr><td>ST Female</td><td>—</td><td>—</td><td class="good">New: Dropout (ST F)</td><td>+3.09</td></tr>
+          <tr><td>ST Female</td><td>Below primary (ST F)</td><td>+1.72</td><td>Persistent, stable</td><td>+1.66</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Religion models: group-specific predictors, declining power</h3>
+    <p>All religion-based models show substantially reduced CV R² between 2001 and 2011, and by 2011 most reduce to a single predictor. Each religion has a distinct dominant predictor: for Hindus it is female literacy (β = −2.19 in 2011); for Muslims it is below-primary share (β = +2.71) — the strongest single predictor in any 2011 religion model, indicating that <em>partial</em> education is insufficient protection and the relevant threshold is middle school or above <a href="#ref1" class="ref-link">[1]</a><a href="#ref4" class="ref-link">[4]</a>.</p>
+
+    <p>The Christian model presents the most striking anomaly: Below primary (Christian F) was a strong <em>negative</em> predictor in 2001 (β = −4.39), meaning states with more below-primary educated Christian women had <em>lower</em> marriage rates — the opposite direction to every other group. By 2011 it flipped to positive (β = +1.41). This sign reversal likely reflects a <strong>composition change</strong>: in 2001, Christian-majority areas were concentrated in the south and northeast (historically low-CMPR regions), whereas by 2011 Christian communities had expanded geographically, reversing the correlation <a href="#ref3" class="ref-link">[3]</a><a href="#ref4" class="ref-link">[4]</a>.</p>
+
+    <figure class="blog-figure">
+      <img src="/figures/lasso_11.png" alt="LASSO coefficients SC Female CMPR 2001 vs 2011">
+      <figcaption><strong>Figure 2 —</strong> LASSO coefficients for SC Female CMPR, 2001 (left) vs. 2011 (right). The 2001 model is dominated by two large protective bars — Literacy (SC F) at −4.31 and CL attending (SC F) at −3.20. In 2011 those are shrunk or gone, replaced by Below primary (SC F) at +1.81 and CL dropout (SC M) at +1.21.</figcaption>
+    </figure>
+
+    <figure class="blog-figure">
+      <img src="/figures/lasso_10.png" alt="What changed between 2001 and 2011: SC Female CMPR">
+      <figcaption><strong>Figure 3 —</strong> Change-bar chart: SC Female CMPR, 2001 → 2011. Each predictor is labelled as Persistent, New in 2011, or Dropped in 2011. The large orange bar for CL attending (SC F) DROPPED at −3.20, and the green NEW bar for CL dropout (SC M) at +1.21, make the structural shift legible in a single panel.</figcaption>
+    </figure>
+
+    <figure class="blog-figure">
+      <img src="/figures/lasso_13.png" alt="LASSO coefficients ST Female CMPR 2001 vs 2011">
+      <figcaption><strong>Figure 4 —</strong> LASSO coefficients for ST Female CMPR, 2001 vs. 2011. The massive −6.55 bar for CL attending (ST F) in 2001 — the largest single coefficient in the whole study — gives way to Dropout (ST F) at +3.09 in 2011. The unchanged Below primary (ST F) bar is visible in both panels.</figcaption>
+    </figure>
+
+    <figure class="blog-figure">
+      <img src="/figures/lasso_7.png" alt="LASSO coefficients Muslim Female CMPR 2001 vs 2011">
+      <figcaption><strong>Figure 5 —</strong> LASSO coefficients for Muslim Female CMPR, 2001 vs. 2011. Below primary (Muslim F) barely changes (+3.05 → +2.71) while all other predictors vanish. The single-bar 2011 panel is the most policy-actionable result in the religion analysis.</figcaption>
+    </figure>
+
+    <figure class="blog-figure">
+      <img src="/figures/lasso_2.png" alt="LASSO coefficients Christian Female CMPR 2001 vs 2011">
+      <figcaption><strong>Figure 6 —</strong> LASSO coefficients for Christian Female CMPR, 2001 vs. 2011. Below primary (Christian F) switches from −4.39 (protective, blue) in 2001 to +1.41 (risk, orange) in 2011 — the only predictor in the entire analysis to reverse sign between years with this magnitude.</figcaption>
+    </figure>
+
+    <div class="pullquote">
+      "The mechanisms driving child marriage are not static. Any policy framework built only on a 2001-era understanding of the problem would miss the household economic distress signal that has since emerged."
+    </div>
   </section>
 
-  <!-- 8. DASHBOARD -->
+  <!-- 8. CLUSTERING -->
+  <section id="clustering">
+    <h2><span class="section-num">08 — Clustering</span>Geographic Patterns: State Groupings</h2>
+    <p>To complement the regression analysis, we apply <strong>Ward-linkage hierarchical clustering</strong> on LASSO-selected predictor features for each population group and census year. All models use k = 3 clusters, confirmed by elbow curves. The analysis groups states by CMPR profile at the <code>age_14_17</code> bracket, revealing which states are genuinely similar in their child marriage landscape — and how those groupings shifted over the decade.</p>
+
+    <h3>SC Female clustering</h3>
+    <p>In 2001, three clusters emerged with well-separated mean CMPRs. The high-burden Cluster 1 (mean CMPR = 36.9) was dominated by Bihar, Jharkhand, Rajasthan, Uttar Pradesh, and West Bengal — the <strong>north + east bloc</strong> — with mean CMPR nearly three times that of the low cluster. Cluster 2 (mean 12.4) was composed almost entirely of southern states and small Union Territories, consistent with the LASSO finding that high female literacy in these states suppresses marriage rates.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Cluster</th><th>Mean CMPR (2001)</th><th>Mean CMPR (2011)</th><th>Characteristic States</th></tr></thead>
+        <tbody>
+          <tr><td><strong>High-burden</strong></td><td>36.9</td><td>29.3</td><td>Bihar, Jharkhand, Rajasthan, UP (2001); Bihar, Jharkhand, Rajasthan, Meghalaya (2011)</td></tr>
+          <tr><td><strong>Low-burden</strong></td><td>12.4</td><td>14.4</td><td>Kerala, Goa, Maharashtra, Mizoram, Pondicherry</td></tr>
+          <tr><td><strong>Middle</strong></td><td>22.5</td><td>18.5</td><td>AP, Assam, Gujarat, Karnataka, Punjab, Delhi, Tamil Nadu</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The most important shift: <strong>Uttar Pradesh exited the highest-burden cluster</strong> between 2001 and 2011 — a notable improvement — moving to the middle cluster alongside Odisha and Himachal Pradesh. Bihar, Jharkhand, and Rajasthan remained in Cluster 1 throughout, confirming their status as <strong>structurally resistant high-burden states</strong>.</p>
+
+    <h3>ST Female clustering</h3>
+    <p>ST clustering reveals different geographic patterns. In 2001, the northeast states (Mizoram, Manipur, Nagaland, Arunachal Pradesh) and Lakshadweep cluster firmly in the low-CMPR group (mean 11.7), reflecting higher female literacy and different social norms. The high-burden cluster (mean 30.0) is composed entirely of central and eastern mainland states — where the below-primary share identified by LASSO is highest.</p>
+
+    <p>By 2011, the ST cluster structure shifted less favourably than SC: the middle tier <em>converged upward</em>, with more states joining the medium-to-high cluster. This is consistent with the LASSO finding that the ST below-primary predictor barely attenuated — structural educational exclusion persisted, and dropout replaced attendance as the operative risk mechanism.</p>
+
+    <h3>Religion-stratified clustering</h3>
+    <p><strong>Hindu:</strong> In 2001, Cluster 1 (mean CMPR 27.3) was anchored by Bihar, Rajasthan, Madhya Pradesh, Jharkhand, UP, and Chhattisgarh — the same high literacy-deficit states identified by LASSO. By 2011, Bihar separated into its own extreme outlier cluster (mean 22.9, only 3 states) driven by Bihar's extraordinarily high Hindu female CMPR.</p>
+
+    <p><strong>Muslim:</strong> The persistence of Below primary (Muslim F) as the sole LASSO predictor in 2011 (β = +2.71) is reinforced by the clustering: the high-CMPR Muslim cluster is precisely the set of states where Muslim female educational attainment is truncated at below-primary level. States like Mizoram and Nagaland appearing in the high Muslim CMPR group reflects small Muslim population sizes there, making CMPR volatile.</p>
+
+    <p><strong>Christian:</strong> Lakshadweep isolated into its own cluster by 2011 with mean CMPR ≈ 0.0 — effectively no Christian child marriage reported. The sign reversal of Below primary (Christian F) between 2001 and 2011 discussed in Section 7 is visible in how the cluster composition shifts across the decade.</p>
+
+    <h3>Cross-group clustering: the most revealing visualisation</h3>
+    <p>The most powerful analysis clusters all 35 states simultaneously on <em>all six female CMPR dimensions</em> (SC F, ST F, Hindu F, Muslim F, Christian F, Total F) for 2011. The result is striking:</p>
+
+    <div class="callout">
+      <strong>🔑 Key Cross-Group Insight</strong>
+      Cluster 1 states — Bihar, Jharkhand, Madhya Pradesh, Rajasthan, West Bengal, Andhra Pradesh, Tripura — are <strong>uniformly high-CMPR across all religious and caste groups simultaneously</strong>. Bihar shows +2.4 SD for SC female, +2.3 SD for Muslim female, and +1.4 SD for Hindu female in the same row. This means these states are not high-burden in just one community — they are structurally high-burden across the board. The dominant driver is <strong>state-level structural factors</strong> (governance quality, enforcement, poverty, educational infrastructure), not community-specific practices <a href="#ref1" class="ref-link">[1]</a><a href="#ref4" class="ref-link">[4]</a>.
+    </div>
+
+    <p>Cluster 2 — just four states (Daman &amp; Diu, Goa, Kerala, Manipur) — is the low-CMPR outlier group across all dimensions simultaneously. The contrast between these two groups makes the state-level governance argument viscerally clear: the same states that protect SC girls also protect ST girls, Muslim girls, and Hindu girls. Protection is not community-specific; it is environmental.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Cluster</th><th>Character</th><th>States</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Cluster 1 — Universally High</strong></td><td>High CMPR across all 6 dimensions</td><td>AP, Bihar, Jharkhand, MP, Rajasthan, Tripura, West Bengal</td></tr>
+          <tr><td><strong>Cluster 2 — Universally Low</strong></td><td>Low CMPR across all 6 dimensions</td><td>Daman &amp; Diu, Goa, Kerala, Manipur</td></tr>
+          <tr><td><strong>Cluster 3 — Heterogeneous Middle</strong></td><td>Mixed profile; group-specific variation</td><td>Assam, Chhattisgarh, Gujarat, HP, J&amp;K, Karnataka, Maharashtra, Meghalaya, Mizoram, Odisha, Sikkim, TN, UP, Uttarakhand</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The dendrogram confirms these are genuinely discrete groups: the large Ward-linkage distance between the Bihar–Jharkhand branch and the rest of the states (≈ distance 14) indicates a truly separate cluster, not just the top of a smooth continuous distribution.</p>
+
+    <figure class="blog-figure">
+      <img src="/figures/cluster_1.png" alt="Cross-group female CMPR heatmap 2011">
+      <figcaption><strong>Figure 7 —</strong> Cross-group Female CMPR heatmap, 2011 (35 states × 6 dimensions). States ordered by cluster. Deep red = high CMPR, deep blue = low. Bihar and West Bengal are uniformly red across all columns; Goa and Kerala are uniformly blue — making the state-level structural argument viscerally clear.</figcaption>
+    </figure>
+
+    <figure class="blog-figure">
+      <img src="/figures/cluster_8.png" alt="State clustering dendrogram SC Female 2001">
+      <figcaption><strong>Figure 8 —</strong> Ward-linkage dendrogram, SC Female 2001. The large gap (≈ distance 14) between the Bihar–Jharkhand branch and the rest of the states confirms that the high-burden group is a genuinely discrete cluster, not just the top of a smooth distribution.</figcaption>
+    </figure>
+
+    <figure class="blog-figure">
+      <img src="/figures/cluster_41.png" alt="State profiles heatmap SC Female 2011">
+      <figcaption><strong>Figure 9 —</strong> State profiles heatmap, SC Female 2011. Six LASSO-selected predictor values shown alongside the CMPR bar for each state, colour-coded by cluster. Cluster 1 states (Bihar, Jharkhand, Rajasthan, Meghalaya) are visibly high on Below primary (SC F) and elevated on CL dropout (SC M) — the new 2011 risk signal from Finding 02.</figcaption>
+    </figure>
+
+    <h3>Clustering insights</h3>
+    <div class="findings-grid">
+      <div class="finding">
+        <div class="finding-num">Clustering Finding 01</div>
+        <h4>UP improved; Bihar–Jharkhand–Rajasthan did not</h4>
+        <p>Uttar Pradesh exited the highest-burden SC cluster between 2001 and 2011 (cluster mean CMPR: 36.9 → 29.3). Bihar, Jharkhand, and Rajasthan remained in Cluster 1 throughout — structurally resistant to the decade's overall progress.</p>
+      </div>
+      <div class="finding">
+        <div class="finding-num">Clustering Finding 02</div>
+        <h4>ST cluster structure worsened 2001 → 2011</h4>
+        <p>Unlike SC, the ST middle tier <em>converged upward</em> — more states joined the medium-to-high cluster by 2011. Consistent with the LASSO finding that the ST below-primary predictor barely attenuated: structural educational exclusion persisted while dropout replaced school attendance as the operative risk pathway.</p>
+      </div>
+      <div class="finding">
+        <div class="finding-num">Clustering Finding 03</div>
+        <h4>High burden is cross-community, not community-specific</h4>
+        <p>Cross-group clustering shows Bihar, Jharkhand, MP, Rajasthan, and West Bengal are simultaneously high across SC, ST, Hindu, Muslim, and Christian CMPR. The dominant driver is state-level structural factors — governance, poverty, educational infrastructure — not any single community's practices.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9. DASHBOARD -->
   <section id="dashboard">
-    <h2><span class="section-num">08 — Dashboard</span>Interactive Exploration</h2>
+    <h2><span class="section-num">09 — Dashboard</span>Interactive Exploration</h2>
     <p>All results are exposed through an interactive web dashboard, designed for non-technical users including NGO staff and policy researchers — no access to raw data or code required.</p>
 
     <div class="dashboard-box">
@@ -1053,17 +1330,7 @@ coefs = dict(<span class="fn">zip</span>(feature_names, final_model.coef_))</cod
       <a class="db-link" href="/" target="_top">→ Open Dashboard</a>
     </div>
 
-    <h3>Technology stack</h3>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Layer</th><th>Technology</th><th>Role</th></tr></thead>
-        <tbody>
-          <tr><td>Frontend</td><td>React</td><td>Interactive visualisations, state controls, choropleth map</td></tr>
-          <tr><td>Backend</td><td>FastAPI</td><td>REST endpoints serving pre-processed CSV data as JSON</td></tr>
-          <tr><td>Data loading</td><td>Pipeline CSVs</td><td>Ingested at startup; served via API</td></tr>
-        </tbody>
-      </table>
-    </div>
+
 
     <h3>Dashboard features</h3>
     <p>The dashboard exposes five main views. The <strong>choropleth map</strong> colours Indian states by CMPR at a user-selected age bracket, with controls to switch between total population, SC, ST, and religion sub-groups. The <strong>2001 vs. 2011 comparison</strong> renders side-by-side state rankings showing how each state's CMPR changed over the decade. The <strong>LASSO results explorer</strong> visualises which predictors were selected for each group and year, and their relative magnitudes — making the regression findings accessible without any statistical background. A <strong>feature correlation explorer</strong> allows scatter-plot comparison of any two indexes across all 35 states, and a <strong>CSV export</strong> lets analysts download filtered slices for their own analysis.</p>
@@ -1073,58 +1340,96 @@ coefs = dict(<span class="fn">zip</span>(feature_names, final_model.coef_))</cod
 
   <!-- 9. LIMITATIONS -->
   <section id="limitations">
-    <h2><span class="section-num">09 — Limitations</span>Caveats</h2>
+    <h2><span class="section-num">10 — Limitations</span>Caveats</h2>
     <p>Honest data science requires surfacing its own blind spots. The key limitations of this analysis are:</p>
 
     <div class="limitations">
       <ol>
         <li><strong>Age band mismatch.</strong> C-02's 5-year bands mean <code>age_10_13</code> includes age 14, and <code>age_14_17</code> excludes it. Some bracket labels are approximations.</li>
         <li><strong>Partial age_18_21 coverage.</strong> In C-08/09/12, ages 20–21 are embedded in the "20–24" band and cannot be extracted, so this bracket covers only ages 18–19 from those sources.</li>
-        <li><strong>Small sample size.</strong> With 35 observations per bracket, all models are in a small-n regime. LOO-CV mitigates overfitting, but CV R² values — especially for religion models — should be treated as hypothesis-generating, not confirmatory.</li>
+        <li><strong>C-12 age floor.</strong> The school attendance dataset begins at age 5; the <code>age_below10</code> bracket covers only ages 5–9, not 0–4.</li>
+        <li><strong>Small sample size.</strong> With 35 observations per bracket, all models are in a small-n regime. LOO-CV mitigates overfitting, but CV R² values — especially for religion models — should be treated as hypothesis-generating, not confirmatory. The SC male 2011 model (11 predictors, CV R² = 0.166) shows signs of overfitting; its predictor list should not be taken as reliable causal drivers.</li>
         <li><strong>State-level aggregation.</strong> District-level variation, which may be substantial, is not captured. State averages can mask high-prevalence pockets.</li>
         <li><strong>Cross-sectional data.</strong> The 2001–2011 comparison approximates a longitudinal design but does not constitute panel estimation; unobserved time-invariant state characteristics are not controlled for.</li>
         <li><strong>Underreporting.</strong> Child marriage is illegal. Some incidence is almost certainly underreported in census responses; our CMPR values are lower bounds.</li>
-        <li><strong>CMPR as proxy.</strong> "Currently married" captures individuals married at any age who are in that state now — not necessarily those who married as children.</li>
-        <li><strong>Religion predictors limited to education.</strong> Occupation, income, and urbanisation — likely important for religion-based differences — are not available at the religion × state level in the census sub-tables used.</li>
+        <li><strong>CMPR as proxy.</strong> "Currently married" captures individuals married at any age who are in that marital state — not necessarily those who married as children.</li>
+        <li><strong>Religion predictors limited to education.</strong> Occupation, income, and urbanisation — likely important for religion-based differences — are not available at the religion × state level in the census sub-tables used. This is the most likely explanation for the sharp CV R² declines in religion models between 2001 and 2011.</li>
+        <li><strong>Hindu male 2001 model.</strong> LASSO selected zero predictors (α at upper bound of 100, CV R² = −0.06). This reflects near-zero explainable variance using available predictors, not a model error. Results for this group-year should not be interpreted.</li>
+        <li><strong>Christian Below primary sign reversal.</strong> The sign reversal (−4.39 in 2001 → +1.41 in 2011) is interpreted as a composition effect but cannot be confirmed without district-level or longitudinal data.</li>
       </ol>
     </div>
   </section>
 
   <!-- 10. CONCLUSION -->
   <section id="conclusion">
-    <h2><span class="section-num">10 — Conclusion</span>What We Found</h2>
+    <h2><span class="section-num">11 — Conclusion</span>What We Found</h2>
     <p>This project constructs a comprehensive, multi-dimensional dataset of child marriage rates and their correlates across all Indian states, drawing on 15+ census sub-tables from the 2001 and 2011 waves. By computing CMPR stratified by sex, scheduled status, and religious community, we produce a state-level analytical resource that enables both descriptive comparison and formal regression modelling — and makes it all accessible through an interactive dashboard.</p>
 
-    <p>The LASSO analysis yields four substantive findings:</p>
+    <p>The LASSO analysis and hierarchical clustering together yield eight substantive findings:</p>
 
-    <div class="findings-grid" style="margin-top:1.5rem;">
-      <div class="finding">
-        <div class="finding-num">✓ Finding 01</div>
-        <h4>Female literacy: universal and persistent</h4>
-        <p>The single most robust predictor of child marriage — across all groups, both years, and both target genders.</p>
-      </div>
-      <div class="finding">
-        <div class="finding-num">✓ Finding 02</div>
-        <h4>A decade-long mechanism shift for SC/ST</h4>
-        <p>School attendance was protective in 2001. By 2011, male child labour dropout had become the dominant risk signal — pointing to household economic distress.</p>
-      </div>
-      <div class="finding">
-        <div class="finding-num">✓ Finding 03</div>
-        <h4>ST: structurally entrenched below-primary share</h4>
-        <p>ST models fit best and show no sign of the below-primary education effect weakening over the decade.</p>
-      </div>
-      <div class="finding">
-        <div class="finding-num">✓ Finding 04</div>
-        <h4>Religion models: non-educational drivers gaining ground</h4>
-        <p>Sharply declining explanatory power in 2011 suggests factors beyond education — urbanisation, religious-legal contexts — became more important.</p>
-      </div>
-    </div>
+    <ol class="conclusion-list">
+      <li><strong>Female literacy is the universal protective driver.</strong> It appears as a selected predictor in every model across all groups and both census years — the most cross-cutting result of the entire analysis. Its coefficient is consistently negative (Literacy Total F: β = −4.90 in 2001; β = −0.99 in 2011), with no exception across groups or target genders.</li>
+      <li><strong>SC models: attendance-to-dropout shift between 2001 and 2011.</strong> School attendance even under child labour (CL attending SC F: β = −3.20) was the second-strongest predictor in 2001. By 2011 it vanished entirely, replaced by male child labour dropout (β = +1.21) — a joint household distress pathway, not a girl-specific educational one.</li>
+      <li><strong>ST models: best predictive fit; below-primary share entrenched.</strong> ST female 2001 achieved the highest CV R² in the study (0.711). CL attending (ST F) at β = −6.55 was the largest coefficient in the entire analysis. Below-primary (ST F) remained virtually unchanged at +1.72 → +1.66 — structurally entrenched and not resolving over the decade.</li>
+      <li><strong>Religion models: declining explanatory power; group-specific dominant predictors.</strong> By 2011, each religion reduces to a single predictor: female literacy for Hindus (β = −2.19); below-primary share for Muslims (β = +2.71, the strongest 2011 religion result); an anomalous sign-reversing below-primary for Christians, reflecting geographic composition change.</li>
+      <li><strong>Universal coefficient attenuation 2001 → 2011.</strong> Every persistent predictor weakened substantially — reflecting both genuine progress and structural change that made single-factor models less adequate. The Total female model's CV R² collapsed from 0.238 to −0.059.</li>
+      <li><strong>SC clustering: UP improved; Bihar–Jharkhand–Rajasthan did not.</strong> Uttar Pradesh exited the highest-burden cluster across the decade. Bihar, Jharkhand, and Rajasthan remained in the top cluster throughout both waves.</li>
+      <li><strong>ST clustering: middle tier converged upward.</strong> Unlike SC, more ST states moved into the medium-to-high burden cluster by 2011 — consistent with persistent educational exclusion at the primary level.</li>
+      <li><strong>Cross-group clustering confirms state-level structural burden.</strong> Bihar, Jharkhand, MP, Rajasthan, and West Bengal are simultaneously high-burden across SC, ST, Hindu, Muslim, and Christian CMPR. The dominant explanation is state-level governance and infrastructure failure, not community-specific practices. Conversely, Goa, Kerala, and Manipur are low across every dimension.</li>
+    </ol>
 
     <div class="pullquote">
-      "The mechanisms driving child marriage are not static. Any policy framework built only on a 2001-era understanding of the problem would miss the household economic distress signal that has since emerged."
+      "Protection is not community-specific — it is environmental. The same states that protect SC girls also protect ST girls, Muslim girls, and Hindu girls."
     </div>
 
-    <p>The analysis is complemented by an interactive dashboard at <a href="/" target="_top">/</a> that visualises CMPR patterns across states, brackets, and sub-groups for non-technical audiences, and exposes the LASSO coefficient comparisons as an explorable interface.</p>
+    <p>The analysis is complemented by an interactive dashboard at <a href="https://project-bachpan.vercel.app" target="_blank">project-bachpan.vercel.app</a> that visualises CMPR patterns across states, brackets, and sub-groups for non-technical audiences, and exposes the LASSO coefficient comparisons and clustering results as an explorable interface.</p>
+  </section>
+
+  <!-- REFERENCES -->
+  <section id="references">
+    <h2><span class="section-num">12 — References</span>Sources &amp; Further Reading</h2>
+    <div class="ref-list">
+      <div class="ref-item" id="ref1">
+        <span class="ref-num">[1]</span>
+        <div class="ref-body">
+          Alice Douglass et al. "Exploring the socioeconomic factors associated with girl child marriage in India." <em>International Journal of Environmental Research and Public Health</em>, 19:4567, 2022.
+          <a href="https://doi.org/10.3390/ijerph19084567" target="_blank" rel="noopener" class="ref-doi">doi:10.3390/ijerph19084567 ↗</a>
+        </div>
+      </div>
+      <div class="ref-item" id="ref2">
+        <span class="ref-num">[2]</span>
+        <div class="ref-body">
+          Chang-Ting Hsieh et al. "India's growth in the 2000s: Four facts." <em>CEPR VoxEU</em>, 2011.
+          <a href="https://cepr.org/voxeu/columns/indias-growth-2000s-four-facts" target="_blank" rel="noopener" class="ref-doi">cepr.org/voxeu ↗</a>
+        </div>
+      </div>
+      <div class="ref-item" id="ref3">
+        <span class="ref-num">[3]</span>
+        <div class="ref-body">
+          Registrar General &amp; Census Commissioner, India. <em>Census of India 2011: Literacy and Education</em>, 2011. Provisional data on literacy rates and gender gaps.
+          <a href="https://censusindia.gov.in" target="_blank" rel="noopener" class="ref-doi">censusindia.gov.in ↗</a>
+        </div>
+      </div>
+      <div class="ref-item" id="ref4">
+        <span class="ref-num">[4]</span>
+        <div class="ref-body">
+          UNFPA India. <em>Child Marriage in India: Key Insights from the NFHS-5</em>, 2022.
+          <a href="https://india.unfpa.org/en/publications/child-marriage-india-key-insights-nfhs-5" target="_blank" rel="noopener" class="ref-doi">india.unfpa.org ↗</a>
+        </div>
+      </div>
+      <div class="ref-item" id="ref5">
+        <span class="ref-num">[5]</span>
+        <div class="ref-body">
+          World Bank. "GDP growth (annual %) — India," 2026. <em>World Development Indicators, Open Data</em>.
+          <a href="https://data.worldbank.org/indicator/NY.GDP.MKTP.KD.ZG?locations=IN" target="_blank" rel="noopener" class="ref-doi">data.worldbank.org ↗</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout" style="margin-top:2rem;">
+      <strong>Data &amp; Code</strong>
+      All data is sourced from the <a href="https://censusindia.gov.in" target="_blank">Census of India</a> (public domain). The dashboard is live at <a href="https://project-bachpan.vercel.app" target="_blank">project-bachpan.vercel.app</a>. Analysis scripts: <code>cmpr_lasso_analysis.py</code>, <code>cmpr_clustering.py</code>, and the five pipeline modules detailed in Section 4.
+    </div>
   </section>
 
   <!-- AUTHOR -->
