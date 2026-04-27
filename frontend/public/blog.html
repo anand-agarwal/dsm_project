@@ -869,8 +869,6 @@
           <tr><td><code>C-08 / C-08 (SC/ST)</code></td><td>Educational Level by Age and Sex</td><td>Literacy, below-primary share, education indexes</td></tr>
           <tr><td><code>C-09</code></td><td>Education Level by Religion and Sex</td><td>Community-level education predictors</td></tr>
           <tr><td><code>C-12 / C-12 (SC/ST)</code></td><td>Attendance by Economic Activity (Ages 5–19)</td><td>Child labour + school attendance indexes</td></tr>
-          <tr><td><code>C-13, C-14, C-15</code></td><td>Age distributions, religious composition</td><td>Denominators, age-digit diagnostics</td></tr>
-        </tbody>
       </table>
     </div>
 
@@ -921,6 +919,215 @@
 
     <p>Together these produce <strong>130+ distinct metric columns</strong> covering literacy rates, below-primary education shares, school attendance rates, child labour indicators, and the CMPR itself at multiple demographic intersections.</p>
   </section>
+
+
+  <!-- INDEX DEFINITIONS SECTION — insert after Section 3 (CMPR) and before Section 4 (Pipeline) -->
+<section id="indexes">
+  <h2><span class="section-num">03b — Index Definitions</span>Constructed Socio-Economic Indexes</h2>
+
+  <p>Beyond the CMPR itself, we construct a suite of socio-economic indexes from <code>C-08</code> (Educational Level by Age and Sex) and <code>C-12</code> (School Attendance by Economic Activity), computed separately for each population sub-group — general population (<code>total</code>), Scheduled Castes (<code>SC</code>), Scheduled Tribes (<code>ST</code>), and six religious communities. These indexes serve as the <strong>predictor variables</strong> in all LASSO regression models.</p>
+
+  <p>All rates are computed within a specific age bracket (e.g., <code>age_14_17</code>) and geographic unit (state). The denominator is always the total population count for that sex × bracket × group, so rates are comparable across states of very different sizes.</p>
+
+  <div class="rule-divider"></div>
+
+  <h3>C-08 — Education Indexes</h3>
+  <p>C-08 provides individual-year population counts broken down by education level attained and sex, for ages 7 through 24+. We sum individual-year rows into the four canonical age brackets using <code>_sum_bracket()</code>, then compute the following rates. All formulas below use the SC sub-group as illustration; identical logic applies to <code>total</code>, <code>ST</code>, and religion sub-groups.</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Index</th>
+          <th>Formula</th>
+          <th>Interpretation</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>Literacy_rate_SC_male</code></td>
+          <td>Literate SC males [bracket] ÷ Total SC males [bracket]</td>
+          <td>Share of SC males in the age bracket who are literate. Consistently the strongest single negative predictor of CMPR across all models.</td>
+        </tr>
+        <tr>
+          <td><code>Literacy_rate_SC_female</code></td>
+          <td>Literate SC females [bracket] ÷ Total SC females [bracket]</td>
+          <td>Female literacy rate for SC population. The most universally selected predictor in the LASSO analysis — negatively associated with child marriage in every group and year.</td>
+        </tr>
+        <tr>
+          <td><code>Illiteracy_rate_SC_female</code></td>
+          <td>Illiterate SC females [bracket] ÷ Total SC females [bracket]</td>
+          <td>Complement of literacy rate. Not used as an independent predictor (collinear with literacy rate) — included for descriptive completeness and education-gradient analysis.</td>
+        </tr>
+        <tr>
+          <td><code>Below_primary_share_SC_female</code></td>
+          <td>SC females with below-primary education [bracket] ÷ Literate SC females [bracket]</td>
+          <td>Among literate SC females, the share whose highest attainment is below primary level. A positive predictor of CMPR: partial education confers less protection than reaching middle school or above. Barely attenuated across the 2001–2011 decade for ST females, signalling an entrenched structural deficit.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout">
+    <strong>⚠ Denominator Note — Below Primary Share</strong>
+    <code>Below_primary_share</code> is normalised against <em>literate</em> population, not total population. This is intentional: it measures educational depth among those who have any schooling at all, separating the question of <em>whether</em> someone is literate from <em>how far</em> their education reached. States with high below-primary shares among literates are those where schooling stalls at the lowest levels — a meaningfully different risk profile from states with high illiteracy outright.
+  </div>
+
+  <div class="formula">
+    Below_primary_share_SC_female<sub>s,b</sub> = SC females (below-primary) / SC females (literate) &nbsp;×&nbsp; 100
+  </div>
+
+  <h3>C-12 — School Attendance &amp; Child Labour Indexes</h3>
+  <p>C-12 cross-tabulates the population aged 5–19 by school attendance status and economic activity category: main workers (≥183 days/year), marginal workers ≥36 days, marginal workers &lt;36 days, and non-workers. Each cell is further split by attendance (attending school / not attending school). We aggregate these cells into five composite indexes.</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Index</th>
+          <th>Numerator</th>
+          <th>Denominator</th>
+          <th>Interpretation</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>School_attendance_rate_SC_male</code></td>
+          <td>All SC males attending school (workers + non-workers)</td>
+          <td>Total SC males in bracket</td>
+          <td>Proportion currently in school, regardless of work status. A broad measure of educational engagement.</td>
+        </tr>
+        <tr>
+          <td><code>School_attendance_rate_SC_female</code></td>
+          <td>All SC females attending school (workers + non-workers)</td>
+          <td>Total SC females in bracket</td>
+          <td>Same as above for females. A key protective indicator: in 2001 SC models, higher attendance was strongly negatively associated with child marriage.</td>
+        </tr>
+        <tr>
+          <td><code>Dropout_rate_SC_male</code></td>
+          <td>All SC males not attending school (workers + non-workers)</td>
+          <td>Total SC males in bracket</td>
+          <td>Share who have exited schooling. Male dropout emerged as a new positive predictor of SC female CMPR in 2011, signalling a joint household distress mechanism.</td>
+        </tr>
+        <tr>
+          <td><code>Dropout_rate_SC_female</code></td>
+          <td>All SC females not attending school (workers + non-workers)</td>
+          <td>Total SC females in bracket</td>
+          <td>Female school exit rate. Directly captures girls who are neither studying nor working — the group most at risk of early marriage.</td>
+        </tr>
+        <tr>
+          <td><code>Child_labour_attending_SC_male</code></td>
+          <td>SC male main + marginal workers who attend school</td>
+          <td>Total SC males in bracket</td>
+          <td>Working boys who remain in school simultaneously — a measure of household economic stress that hasn't yet broken schooling. In 2001 ST models, the equivalent female index had the largest coefficient in the entire study (β = −6.55).</td>
+        </tr>
+        <tr>
+          <td><code>Child_labour_attending_SC_female</code></td>
+          <td>SC female main + marginal workers who attend school</td>
+          <td>Total SC females in bracket</td>
+          <td>Working girls who remain in school. In 2001 this was a strong negative predictor of CMPR — keeping a girl in school, even under child labour, meaningfully reduced marriage probability. This protective signal disappeared entirely by 2011.</td>
+        </tr>
+        <tr>
+          <td><code>Child_labour_dropout_SC_male</code></td>
+          <td>SC male main + marginal workers who do not attend school</td>
+          <td>Total SC males in bracket</td>
+          <td>Working boys who have dropped out of school — the most acute household economic distress signal. Emerged as a key positive predictor of SC female CMPR in 2011 (β = +1.21), where it was absent in 2001.</td>
+        </tr>
+        <tr>
+          <td><code>Child_labour_dropout_SC_female</code></td>
+          <td>SC female main + marginal workers who do not attend school</td>
+          <td>Total SC females in bracket</td>
+          <td>Working girls who have dropped out. Captures the intersection of economic exploitation and educational exclusion — a direct vulnerability pathway to early marriage.</td>
+        </tr>
+        <tr>
+          <td><code>Non_worker_dropout_SC_female</code></td>
+          <td>SC female non-workers who do not attend school</td>
+          <td>Total SC females in bracket</td>
+          <td>Girls who are neither working nor in school — a particularly acute vulnerability indicator. Not included as a LASSO predictor (collinear with dropout rate) but retained as a descriptive vulnerability flag.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout">
+    <strong>⚠ C-12 Coverage Limits</strong>
+    The <code>age_below10</code> bracket covers only ages 5–9 (C-12 begins at age 5). The <code>age_18_21</code> bracket covers only ages 18–19 (C-12 ends at age 19). The summary row labelled "5–19" is excluded from all bracket summations to avoid double-counting.
+  </div>
+
+  <h3>Worker taxonomy used in C-12 aggregation</h3>
+  <p>C-12 distinguishes four economic activity categories, which we collapse into two composite groups for the indexes above:</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>C-12 Category</th><th>Census Definition</th><th>Mapped To</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Main workers</td><td>Worked ≥ 183 days in reference year</td><td rowspan="3" style="vertical-align:middle; font-weight:600; color:var(--accent);">Child labour<br>(workers)</td></tr>
+        <tr><td>Marginal workers ≥ 36 days</td><td>Worked 36–182 days</td></tr>
+        <tr><td>Marginal workers &lt; 36 days</td><td>Worked fewer than 36 days</td></tr>
+        <tr><td>Non-workers</td><td>No work activity recorded</td><td style="font-weight:600; color:var(--ink-muted);">Non-workers</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="code-label">Python · build_SC.py — C-12 aggregation (simplified)</div>
+<pre><code><span class="cm"># Sum individual-year rows into bracket (e.g., age_14_17 → ages 14, 15, 16, 17)</span>
+agg = <span class="fn">_sum_bracket</span>(df, <span class="st">'age_group'</span>, C12_VALUE_COLS, bracket, AGE_BRACKET_C12)
+
+<span class="cm"># Child labour attending school (main + both marginal categories)</span>
+cl_att_f = agg[<span class="st">'att_main_f'</span>] + agg[<span class="st">'att_marg36_f'</span>] + agg[<span class="st">'att_marg3_f'</span>]
+
+<span class="cm"># Child labour NOT attending school</span>
+cl_natt_f = agg[<span class="st">'natt_main_f'</span>] + agg[<span class="st">'natt_marg36_f'</span>] + agg[<span class="st">'natt_marg3_f'</span>]
+
+<span class="cm"># Non-worker dropout (female only — key vulnerability indicator)</span>
+nonw_natt_f = agg[<span class="st">'natt_nonw_f'</span>]
+
+<span class="cm"># Final rates — safe_div returns NaN (not 0) if denominator is 0</span>
+Child_labour_attending_SC_female = <span class="fn">safe_div</span>(cl_att_f,    tot_f)
+Child_labour_dropout_SC_female   = <span class="fn">safe_div</span>(cl_natt_f,   tot_f)
+Non_worker_dropout_SC_female     = <span class="fn">safe_div</span>(nonw_natt_f, tot_f)</code></pre>
+
+  <h3>How indexes map to LASSO predictors</h3>
+  <p>Not all constructed indexes enter the LASSO as predictors. The table below documents which are used as regression inputs and which are retained only for descriptive or diagnostic purposes, along with the reason for any exclusion.</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Index</th><th>Used in LASSO?</th><th>Reason if Excluded</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>Literacy_rate_SC_female</code></td><td class="good">✓ Yes</td><td>Primary structural predictor</td></tr>
+        <tr><td><code>Literacy_rate_SC_male</code></td><td class="good">✓ Yes</td><td>Cross-gender community signal</td></tr>
+        <tr><td><code>Illiteracy_rate_SC_female</code></td><td class="warn">✗ No</td><td>Definitional complement of literacy rate — collinear by construction</td></tr>
+        <tr><td><code>Below_primary_share_SC_female</code></td><td class="good">✓ Yes</td><td>Captures educational depth, orthogonal to literacy rate</td></tr>
+        <tr><td><code>School_attendance_rate_SC_female</code></td><td class="good">✓ Yes</td><td>Broad attendance signal; dominant protective predictor in 2001</td></tr>
+        <tr><td><code>School_attendance_rate_SC_male</code></td><td class="good">✓ Yes</td><td>Cross-gender household signal</td></tr>
+        <tr><td><code>Dropout_rate_SC_female</code></td><td class="good">✓ Yes</td><td>Captures exit from education</td></tr>
+        <tr><td><code>Dropout_rate_SC_male</code></td><td class="good">✓ Yes</td><td>Key 2011 predictor — joint household distress pathway</td></tr>
+        <tr><td><code>Child_labour_attending_SC_female</code></td><td class="good">✓ Yes</td><td>Work + school co-occurrence — protective signal in 2001</td></tr>
+        <tr><td><code>Child_labour_attending_SC_male</code></td><td class="good">✓ Yes</td><td>Cross-gender analogue</td></tr>
+        <tr><td><code>Child_labour_dropout_SC_female</code></td><td class="good">✓ Yes</td><td>Most acute individual risk signal</td></tr>
+        <tr><td><code>Child_labour_dropout_SC_male</code></td><td class="good">✓ Yes</td><td>Joint household distress; emerged in 2011 SC models</td></tr>
+        <tr><td><code>Non_worker_dropout_SC_female</code></td><td class="warn">✗ No</td><td>High collinearity with <code>Dropout_rate_SC_female</code>; retained as descriptive flag only</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="findings-grid">
+    <div class="finding">
+      <div class="finding-num">Design Principle 01</div>
+      <h4>Cross-gender indexes as community signals</h4>
+      <p>Male literacy and male child labour dropout are included as predictors of <em>female</em> CMPR. These proxy household-level educational culture and economic stress — factors that operate on marriage decisions for all members of a household, not just girls.</p>
+    </div>
+    <div class="finding">
+      <div class="finding-num">Design Principle 02</div>
+      <h4>Structural rates only — no tautological inputs</h4>
+      <p>Conditional CMPR values (e.g., CMPR for illiterate women) share a denominator structure with the target variable and are excluded from LASSO inputs. Only structural rates from independent census sub-tables are used as predictors.</p>
+    </div>
+  </div>
+</section>
 
   <!-- 4. PIPELINE -->
   <section id="pipeline">
