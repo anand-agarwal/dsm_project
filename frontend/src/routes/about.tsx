@@ -33,13 +33,6 @@ function About() {
           <li><strong>Social splits</strong> — SC, ST, and religion from C-02 / C-03 / C-05.</li>
         </ul>
 
-        <h2 className="font-display text-2xl mt-10">A note on the data</h2>
-        <p className="mt-3 text-foreground/85">
-          The figures shown in this preview build are <em>synthetic but realistic</em>: state ordering,
-          year-on-year direction, and worker-category gradients are calibrated to reflect publicly known
-          patterns. Real Census tables can be loaded once the data layer is wired up.
-        </p>
-
         <div className="mt-10 flex gap-4">
           <Link to="/" className="bg-ink text-paper px-4 py-2 rounded text-sm">Open the atlas</Link>
           <Link to="/explore" className="border border-rule px-4 py-2 rounded text-sm">Browse raw tables</Link>
