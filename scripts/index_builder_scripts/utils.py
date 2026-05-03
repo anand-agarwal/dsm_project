@@ -18,8 +18,8 @@ warnings.filterwarnings("ignore", category=UserWarning)
 # ---------------------------------------------------------------------------
 # CONFIGURATION  (edit here; all build scripts inherit these values)
 # ---------------------------------------------------------------------------
-DATA_ROOT  = "/Users/anandagarwal/dsm_project/census_downloads_2011"
-OUTPUT_DIR = "/Users/anandagarwal/dsm_project/output_datasets_2011"
+DATA_ROOT  = "/Users/anandagarwal/dsm_project/census_downloads_2001"
+OUTPUT_DIR = "/Users/anandagarwal/dsm_project/output_datasets_2001_new"
 
 # ---------------------------------------------------------------------------
 # FOLDER MAP
@@ -43,20 +43,40 @@ FOLDER = {
 # ---------------------------------------------------------------------------
 # AGE BRACKET DEFINITIONS
 # ---------------------------------------------------------------------------
-# Four canonical brackets used across all datasets.
+# Eight canonical brackets used across all datasets.
+# The first four are the original child/early-marriage range;
+# the four new brackets extend coverage through age 34+.
 # See NOTE blocks below for known boundary limitations per dataset.
-AGE_BRACKETS = ['age_below10', 'age_10_13', 'age_14_17', 'age_18_21']
+AGE_BRACKETS = [
+    'age_below10',
+    'age_10_13',
+    'age_14_17',
+    'age_18_21',
+    'age_22_25',   # NEW
+    'age_26_29',   # NEW
+    'age_30_33',   # NEW
+    'age_34_plus', # NEW
+]
 
 # ---------------------------------------------------------------------------
 # C-02 / C-02-SC / C-02-ST  — CURRENT population age (5-year bands)
 # ---------------------------------------------------------------------------
-# NOTE: C-02 uses 5-year bands so boundaries only approximate our 4-year
-#       canonical brackets.  Specifically:
-#         • '10-14' maps to age_10_13  → includes one extra year (14)
-#         • '15-19' maps to age_14_17  → misses one year (14) captured above
-#         • '20-24' maps to age_18_21  → includes three extra years (22-24)
-#       This mismatch is structural and unavoidable.  Downstream scripts
-#       should note C-02 figures as "approximate" for these brackets.
+# NOTE: C-02 uses 5-year bands so boundaries only approximate our brackets.
+#   Specifically:
+#     • '10-14'  maps to age_10_13   → includes one extra year (14)
+#     • '15-19'  maps to age_14_17   → misses age 14 (captured above)
+#     • '20-24'  maps to age_18_21   → includes ages 22-24 (extra)
+#     • '25-29'  maps to age_22_25   → misses age 22-24 (captured above) +
+#                                       includes age 25 only partially correct
+#     • '30-34'  maps to age_30_33   → includes age 34 (one extra year)
+#     • '35-39'  maps to age_34_plus → only the first year (35) is within
+#                                       the bracket's intent; rest are beyond
+#   age_26_29 has NO clean C-02 band — '25-29' is shared between age_22_25
+#   and age_26_29. It is left unmapped (empty set) so downstream code
+#   receives NaN and must document the gap.
+#   age_34_plus uses '35-39' and all higher bands ('40-44' … '80+') summed.
+#   This mismatch is structural and unavoidable. Downstream scripts should
+#   note C-02 figures as "approximate" for every bracket.
 #
 # Additional aggregate labels present in C-02:
 #   'Less than 18'  — useful as a direct child-marriage numerator proxy
@@ -68,6 +88,11 @@ AGE_BRACKET_C02 = {
     'age_10_13'   : {'10-14'},          # ~approximate: includes age 14
     'age_14_17'   : {'15-19'},          # ~approximate: misses age 14
     'age_18_21'   : {'20-24'},          # ~approximate: includes ages 22-24
+    'age_22_25'   : {'20-24'},          # ~approximate: 25-29 band; misses 22-24, includes 25-29
+    'age_26_29'   : {'25-29'},              # UNAVAILABLE: no clean band; '25-29' already used above
+    'age_30_33'   : {'30-34'},          # ~approximate: includes age 34
+    'age_34_plus' : {'35-39', '40-44', '45-49', '50-54', '55-59',
+                     '60-64', '65-69', '70-74', '75-79', '80+'},  # ~approximate: starts at 35
 }
 
 # Convenience sets for the aggregate labels in C-02
@@ -97,7 +122,11 @@ AGE_BRACKET_MARRIAGE_C04 = {
     'age_below10' : {'less than 10'},
     'age_10_13'   : {'10-11', '12-13'},
     'age_14_17'   : {'14-15', '16-17'},
-    'age_18_21'   : {'18-19', '20-21'}
+    'age_18_21'   : {'18-19', '20-21'},
+    'age_22_25'   : {'22-23', '24-25'},  # NEW: clean 2-year bands
+    'age_26_29'   : {'26-27', '28-29'},  # NEW: clean 2-year bands
+    'age_30_33'   : {'30-31', '32-33'},  # NEW: clean 2-year bands
+    'age_34_plus' : {'34+'},             # NEW: single open-ended band
 }
 
 # ---------------------------------------------------------------------------
@@ -111,7 +140,10 @@ AGE_BRACKET_MARRIAGE_C05 = {
     'age_10_13'   : {'10-11', '12-13'},
     'age_14_17'   : {'14-15', '16-17'},
     'age_18_21'   : {'18-19', '20-21'},
-
+    'age_22_25'   : {'22-23', '24-25'},  # NEW
+    'age_26_29'   : {'26-27', '28-29'},  # NEW
+    'age_30_33'   : {'30-31', '32-33'},  # NEW
+    'age_34_plus' : {'34+'},             # NEW
 }
 
 # ---------------------------------------------------------------------------
@@ -127,6 +159,10 @@ AGE_BRACKET_MARRIAGE_C06 = {
     'age_10_13'   : {'10-11', '12-13'},
     'age_14_17'   : {'14-15', '16-17'},
     'age_18_21'   : {'18-19', '20-21'},
+    'age_22_25'   : {'22-23', '24-25'},  # NEW
+    'age_26_29'   : {'26-27', '28-29'},  # NEW
+    'age_30_33'   : {'30-31', '32-33'},  # NEW
+    'age_34_plus' : {'34+'},             # NEW
 }
 
 # ---------------------------------------------------------------------------
@@ -140,15 +176,23 @@ AGE_BRACKET_MARRIAGE_C07 = {
     'age_10_13'   : {'10-11', '12-13'},
     'age_14_17'   : {'14-15', '16-17'},
     'age_18_21'   : {'18-19', '20-21'},
+    'age_22_25'   : {'22-23', '24-25'},  # NEW
+    'age_26_29'   : {'26-27', '28-29'},  # NEW
+    'age_30_33'   : {'30-31', '32-33'},  # NEW
+    'age_34_plus' : {'34+'},             # NEW
 }
 
 # Convenience alias: single dict used by build scripts that process
-# C-04/05/06/07 identically for the four core brackets.
+# C-04/05/06/07 identically for all eight core brackets.
 AGE_BRACKET_MARRIAGE = {
     'age_below10' : {'less than 10'},
     'age_10_13'   : {'10-11', '12-13'},
     'age_14_17'   : {'14-15', '16-17'},
     'age_18_21'   : {'18-19', '20-21'},
+    'age_22_25'   : {'22-23', '24-25'},  # NEW
+    'age_26_29'   : {'26-27', '28-29'},  # NEW
+    'age_30_33'   : {'30-31', '32-33'},  # NEW
+    'age_34_plus' : {'34+'},             # NEW
 }
 
 # ---------------------------------------------------------------------------
@@ -156,10 +200,26 @@ AGE_BRACKET_MARRIAGE = {
 #                               then 5-year bands from 20 onward)
 # ---------------------------------------------------------------------------
 # Individual-year rows must be SUMMED to build brackets.
-# NOTE for age_18_21: C-08 provides age 18 and age 19 individually, then
-#   jumps to '20-24'.  Ages 20 and 21 cannot be separated from 22-24.
-#   The age_18_21 bracket here captures 18 + 19 only; the build script
-#   must document that 20-21 are unavailable for C-08.
+#
+# NOTE for age_18_21: C-08 provides age 18 and 19 individually, then jumps
+#   to '20-24'. Ages 20-21 cannot be separated from 22-24, so age_18_21
+#   captures only 18+19 (partial). Document accordingly.
+#
+# NOTE for age_22_25: '20-24' is the only available band covering 22-24;
+#   it also contains 20-21 which belong to age_18_21. The band is therefore
+#   shared across two brackets and will produce double-counting if both are
+#   summed. Build scripts MUST use '20-24' for age_22_25 and flag it as
+#   approximate (it actually covers 20-24, not 22-25).
+#
+# NOTE for age_26_29: '25-29' band maps cleanly here but also captures age
+#   25. Flagged as approximate (covers 25-29, not 26-29).
+#
+# NOTE for age_30_33: '30-34' band maps here but includes age 34. Flagged
+#   as approximate (covers 30-34, not 30-33).
+#
+# NOTE for age_34_plus: '35-39' and higher bands. The first year of intent
+#   (34) is absorbed into '30-34' above. Build scripts must document that
+#   C-08 age_34_plus effectively starts at 35.
 #
 # Labels present: All ages, 0-6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
 #   18, 19, 20-24, 25-29, 30-34, 35-39, 40-44, 45-49, 50-54, 55-59, 60-64,
@@ -168,7 +228,12 @@ AGE_BRACKET_C08 = {
     'age_below10' : {'0-6', '7', '8', '9'},
     'age_10_13'   : {'10', '11', '12', '13'},
     'age_14_17'   : {'14', '15', '16', '17'},
-    'age_18_21'   : {'18', '19'},           # NOTE: 20-21 not separable; partial
+    'age_18_21'   : {'18', '19'},              # NOTE: 20-21 not separable; partial
+    'age_22_25'   : {'20-24'},                 # NOTE: covers 20-24 (not 22-25); approximate
+    'age_26_29'   : {'25-29'},                 # NOTE: covers 25-29 (not 26-29); approximate
+    'age_30_33'   : {'30-34'},                 # NOTE: covers 30-34 (not 30-33); approximate
+    'age_34_plus' : {'35-39', '40-44', '45-49', '50-54', '55-59',
+                     '60-64', '65-69', '70-74', '75-79', '80+'},  # NOTE: starts at 35, not 34
 }
 
 # ---------------------------------------------------------------------------
@@ -176,8 +241,12 @@ AGE_BRACKET_C08 = {
 #          then grouped bands; slightly different upper grouping from C-08)
 # ---------------------------------------------------------------------------
 # NOTE for age_18_21: same limitation as C-08 — 20-24 cannot be split.
-#   Additionally C-09 collapses 35–59 into one band and 60+ into one band,
-#   making those ranges unusable for our brackets (not relevant for <22).
+# NOTE for age_22_25: same approximation as C-08 — '20-24' used; partial.
+# NOTE for age_26_29: '25-29' maps here; covers 25-29, not 26-29.
+# NOTE for age_30_33: '30-34' maps here; covers 30-34, not 30-33.
+# NOTE for age_34_plus: C-09 collapses 35-59 into one band and 60+ into
+#   one band — both are included in age_34_plus but cover a much wider
+#   range than intended.
 #
 # Labels present: Total, 0-6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
 #   18, 19, 20-24, 25-29, 30-34, 35-59, 60+
@@ -186,27 +255,38 @@ AGE_BRACKET_C09 = {
     'age_below10' : {'0-6', '7', '8', '9'},
     'age_10_13'   : {'10', '11', '12', '13'},
     'age_14_17'   : {'14', '15', '16', '17'},
-    'age_18_21'   : {'18', '19'},           # NOTE: 20-21 not separable; partial
+    'age_18_21'   : {'18', '19'},              # NOTE: 20-21 not separable; partial
+    'age_22_25'   : {'20-24'},                 # NOTE: covers 20-24 (not 22-25); approximate
+    'age_26_29'   : {'25-29'},                 # NOTE: covers 25-29 (not 26-29); approximate
+    'age_30_33'   : {'30-34'},                 # NOTE: covers 30-34 (not 30-33); approximate
+    'age_34_plus' : {'35-59', '60+'},          # NOTE: very wide bands; C-09 has no finer split
 }
 
 # ---------------------------------------------------------------------------
 # C-12 / C-12-SC / C-12-ST  — School ENROLMENT (ages 5–19 only)
 # ---------------------------------------------------------------------------
 # C-12 covers ages 5–19 as individual single years, plus an aggregate
-# '5-19' row.  The dataset does NOT extend beyond age 19, so age_18_21
-# is only partially covered (18 and 19 are present; 20-21 are absent).
-# There is no 'Age not stated' row.
+# '5-19' row. The dataset does NOT extend beyond age 19.
 #
-# NOTE for age_below10: C-12 starts at age 5, not 0.  Ages 0-4 are absent.
-#   The bracket captures only 5, 6, 7, 8, 9.
+# Therefore:
+#   age_22_25, age_26_29, age_30_33, age_34_plus — ALL UNAVAILABLE.
+#   These brackets are mapped to empty sets; build scripts will produce NaN
+#   and must document that C-12 enrolment data ends at age 19.
+#
+# NOTE for age_below10: C-12 starts at age 5, not 0. Ages 0-4 are absent.
+# NOTE for age_18_21:   only ages 18 and 19 present; 20-21 absent.
 #
 # Labels present: 5-19 (aggregate), 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,
 #   15, 16, 17, 18, 19
 AGE_BRACKET_C12 = {
-    'age_below10' : {'5', '6', '7', '8', '9'},   # NOTE: ages 0-4 absent
+    'age_below10' : {'5', '6', '7', '8', '9'},  # NOTE: ages 0-4 absent
     'age_10_13'   : {'10', '11', '12', '13'},
     'age_14_17'   : {'14', '15', '16', '17'},
-    'age_18_21'   : {'18', '19'},                  # NOTE: 20-21 absent; partial
+    'age_18_21'   : {'18', '19'},                # NOTE: 20-21 absent; partial
+    'age_22_25'   : set(),                       # UNAVAILABLE: C-12 ends at age 19
+    'age_26_29'   : set(),                       # UNAVAILABLE: C-12 ends at age 19
+    'age_30_33'   : set(),                       # UNAVAILABLE: C-12 ends at age 19
+    'age_34_plus' : set(),                       # UNAVAILABLE: C-12 ends at age 19
 }
 
 # ---------------------------------------------------------------------------
@@ -283,6 +363,53 @@ PARTIAL_18_21 = {'C-08', 'C-08-SC', 'C-08-ST', 'C-09', 'C-12', 'C-12-SC', 'C-12-
 
 # Which datasets use approximate 5-year bands for core brackets
 APPROXIMATE_BRACKETS = {'C-02', 'C-02-SC', 'C-02-ST'}
+
+# Which datasets have approximate or unavailable coverage for the new brackets
+# Key: dataset → set of brackets that are approximate or completely unavailable
+BRACKET_COVERAGE_NOTES = {
+    # C-02 family: all new brackets approximate due to 5-year banding;
+    # age_26_29 is completely unavailable (no clean mapping possible)
+    'C-02'    : {'age_22_25': 'approximate', 'age_26_29': 'unavailable',
+                 'age_30_33': 'approximate', 'age_34_plus': 'approximate'},
+    'C-02-SC' : {'age_22_25': 'approximate', 'age_26_29': 'unavailable',
+                 'age_30_33': 'approximate', 'age_34_plus': 'approximate'},
+    'C-02-ST' : {'age_22_25': 'approximate', 'age_26_29': 'unavailable',
+                 'age_30_33': 'approximate', 'age_34_plus': 'approximate'},
+    # C-04/05/06/07: all new brackets clean (exact 2-year bands + 34+)
+    'C-04'    : {},
+    'C-05'    : {},
+    'C-06'    : {},
+    'C-07'    : {},
+    # C-08 family: new brackets all approximate (5-year banding above 19)
+    'C-08'    : {'age_22_25': 'approximate', 'age_26_29': 'approximate',
+                 'age_30_33': 'approximate', 'age_34_plus': 'approximate'},
+    'C-08-SC' : {'age_22_25': 'approximate', 'age_26_29': 'approximate',
+                 'age_30_33': 'approximate', 'age_34_plus': 'approximate'},
+    'C-08-ST' : {'age_22_25': 'approximate', 'age_26_29': 'approximate',
+                 'age_30_33': 'approximate', 'age_34_plus': 'approximate'},
+    # C-09: new brackets approximate; age_34_plus is very wide (35-59, 60+)
+    'C-09'    : {'age_22_25': 'approximate', 'age_26_29': 'approximate',
+                 'age_30_33': 'approximate', 'age_34_plus': 'approximate_wide'},
+    # C-12 family: all new brackets unavailable (data ends at age 19)
+    'C-12'    : {'age_22_25': 'unavailable', 'age_26_29': 'unavailable',
+                 'age_30_33': 'unavailable', 'age_34_plus': 'unavailable'},
+    'C-12-SC' : {'age_22_25': 'unavailable', 'age_26_29': 'unavailable',
+                 'age_30_33': 'unavailable', 'age_34_plus': 'unavailable'},
+    'C-12-ST' : {'age_22_25': 'unavailable', 'age_26_29': 'unavailable',
+                 'age_30_33': 'unavailable', 'age_34_plus': 'unavailable'},
+}
+
+# Which datasets have partial age_18_21 coverage (20-21 not separable)
+PARTIAL_18_21 = {'C-08', 'C-08-SC', 'C-08-ST', 'C-09', 'C-12', 'C-12-SC', 'C-12-ST'}
+
+# Which datasets use approximate 5-year bands for core brackets
+APPROXIMATE_BRACKETS = {'C-02', 'C-02-SC', 'C-02-ST'}
+
+# Datasets where age_26_29 is completely unmappable
+UNAVAILABLE_26_29 = {'C-02', 'C-02-SC', 'C-02-ST'}
+
+# Datasets where C-12 new brackets are all unavailable (ends at 19)
+UNAVAILABLE_NEW_BRACKETS = {'C-12', 'C-12-SC', 'C-12-ST'}
 
 
 # ---------------------------------------------------------------------------
@@ -570,8 +697,13 @@ def _rows_for_bracket(df: pd.DataFrame, age_col: str,
 
     Uses _normalise_age_label() so '34 +' and '34+' both match,
     and capitalisation differences are ignored.
+
+    Returns an empty DataFrame (not NaN) when the bracket's label set is
+    empty (i.e. the bracket is unavailable for this dataset).
     """
     labels = {_normalise_age_label(l) for l in bracket_map[bracket]}
+    if not labels:
+        return df.iloc[0:0]            # empty DataFrame, same columns
     mask   = df[age_col].map(_normalise_age_label).isin(labels)
     return df[mask]
 
@@ -584,7 +716,8 @@ def _sum_bracket(df: pd.DataFrame, age_col: str,
     value_cols across the rows belonging to `bracket` and return a Series.
 
     Returns a Series of NaN when no matching rows are found (e.g. age_18_21
-    in C-12 for ages 20-21 which are absent).
+    in C-12 for ages 20-21 which are absent, or any new bracket in C-12
+    which ends at age 19).
     """
     sub = _rows_for_bracket(df, age_col, bracket, bracket_map)
     if sub.empty:
@@ -693,7 +826,17 @@ def save_outputs(outputs: dict) -> None:
     print(f"\n  Age brackets : {AGE_BRACKETS}")
     print(f"  Format       : LONG — one row per (state × age_bracket)")
     print(f"\n  Coverage notes:")
-    print(f"    C-02/SC/ST : 5-year bands — brackets are APPROXIMATE")
-    print(f"    C-08/09    : age_18_21 captures only ages 18-19 (20-21 inseparable from 20-24)")
-    print(f"    C-12/SC/ST : age_below10 starts at age 5; age_18_21 captures only 18-19")
+    print(f"    C-02/SC/ST : 5-year bands — all brackets APPROXIMATE")
+    print(f"                 age_26_29 is UNAVAILABLE (no clean band mapping)")
+    print(f"                 age_34_plus starts at 35 (34 absorbed into 30-34 band)")
+    print(f"    C-04/05/06/07 : all brackets EXACT (2-year bands + 34+)")
+    print(f"    C-08/SC/ST : age_18_21 captures only 18-19 (20-21 inseparable from 20-24)")
+    print(f"                 age_22_25 uses 20-24 band (includes 20-21); APPROXIMATE")
+    print(f"                 age_26_29 uses 25-29 band (includes 25); APPROXIMATE")
+    print(f"                 age_30_33 uses 30-34 band (includes 34); APPROXIMATE")
+    print(f"                 age_34_plus starts at 35; APPROXIMATE")
+    print(f"    C-09       : same approximations as C-08")
+    print(f"                 age_34_plus uses wide bands 35-59 and 60+; very APPROXIMATE")
+    print(f"    C-12/SC/ST : age_below10 starts at 5; age_18_21 captures only 18-19")
+    print(f"                 age_22_25/26_29/30_33/34_plus all UNAVAILABLE (data ends at 19)")
     print(f"{'='*70}")

@@ -5,8 +5,8 @@ build_total.py  —  Builds df_total (General Population)
 Sources  : C-04  (Age at Marriage × Ever-married counts)
            C-06  (Education level × Age at Marriage)
            C-07  (Economic activity × Age at Marriage)
-           C-08  (Education level × Age × Sex)          ← NEW
-           C-12  (School attendance × Economic activity) ← NEW
+           C-08  (Education level × Age × Sex)
+           C-12  (School attendance × Economic activity, age 5-19)
 
 Outputs  : df_total_state.csv   — all columns (male + female)
            df_total_male.csv    — geo keys + male columns only
@@ -14,10 +14,24 @@ Outputs  : df_total_state.csv   — all columns (male + female)
 
 Format   : LONG — one row per (state × age_bracket)
            Age brackets: age_below10 | age_10_13 | age_14_17 | age_18_21
+                         age_22_25   | age_26_29  | age_30_33  | age_34_plus
 
-Coverage notes (NEW sources):
-  C-08 : age_18_21 captures only ages 18-19 (20-21 inseparable from 20-24)
-  C-12 : age_below10 starts at age 5; age_18_21 captures only 18-19
+Note: This script does NOT use C-02 (total or Appendix).  All marriage-rate
+indexes come from C-04/C-06/C-07, which carry exact 2-year age-at-marriage
+bands for the full bracket range.  The C-02 Appendix changes in utils.py
+are therefore irrelevant here.
+
+Coverage notes:
+  C-04/06/07 : all eight brackets EXACT (2-year bands + 34+ open band)
+  C-08       : age_18_21 captures only ages 18-19
+               (20-21 inseparable from the 20-24 grouped band)
+               age_22_25 uses the 20-24 band (includes 20-21); APPROXIMATE
+               age_26_29 uses the 25-29 band (includes 25);    APPROXIMATE
+               age_30_33 uses the 30-34 band (includes 34);    APPROXIMATE
+               age_34_plus starts at 35;                        APPROXIMATE
+  C-12       : age_below10 starts at age 5 (0-4 absent)
+               age_18_21 covers only ages 18-19 (dataset ends at 19)
+               age_22_25 / age_26_29 / age_30_33 / age_34_plus → NaN
 =============================================================================
 """
 
@@ -25,12 +39,15 @@ import numpy as np
 import pandas as pd
 
 from utils import (
-    AGE_BRACKETS, AGE_BRACKET_MARRIAGE, ALL_AGES_LABEL, EXCLUDE_AGES,
-    AGE_BRACKET_C08, AGE_BRACKET_C12,                  # NEW
+    AGE_BRACKETS,
+    AGE_BRACKET_MARRIAGE,
+    AGE_BRACKET_C08,
+    AGE_BRACKET_C12,
+    ALL_AGES_LABEL, EXCLUDE_AGES,
     EDU_LEVEL_ALIASES, EDU_SHORT, ECON_KW,
     GEO_KEYS,
     _read_excel, _glob_files, _pad_df, _clean_name,
-    _state_slice, _rows_for_bracket, _sum_bracket, _make_geo, _outer_merge,  # _sum_bracket NEW
+    _state_slice, _rows_for_bracket, _sum_bracket, _make_geo, _outer_merge,
     gender_split, save_outputs,
     safe_div,
 )
@@ -38,20 +55,24 @@ from utils import (
 
 # =============================================================================
 # SECTION 1 — C-04   (General Age at Marriage)
-# Columns: CMPR_total_male, CMPR_total_female
+# Bracket map : AGE_BRACKET_MARRIAGE (exact 2-year bands + '34+')
+# Columns     : CMPR_total_male, CMPR_total_female
+#
+# CMPR = (ever-married in bracket) / (total ever-married, all ages) × 100
+# All eight canonical brackets are cleanly supported by C-04's 2-year bands.
 # =============================================================================
 
 C04_COLS = [
-    'table_name', 'state_code', 'district_code', 'area_name', 'area_type',
+    'table_name', 'state_code', 'district_code', 'tehsil_code','area_name', 'area_type',
     'age_at_marriage',
     'ever_married_m', 'ever_married_f',
-    'curr_m_all', 'curr_f_all',
-    'curr_m_0_4', 'curr_f_0_4',
-    'curr_m_5_9', 'curr_f_5_9',
-    'curr_m_10_19', 'curr_f_10_19',
-    'curr_m_20_29', 'curr_f_20_29',
-    'curr_m_30_39', 'curr_f_30_39',
-    'curr_m_40plus', 'curr_f_40plus',
+    'curr_m_all',     'curr_f_all',
+    'curr_m_0_4',     'curr_f_0_4',
+    'curr_m_5_9',     'curr_f_5_9',
+    'curr_m_10_19',   'curr_f_10_19',
+    'curr_m_20_29',   'curr_f_20_29',
+    'curr_m_30_39',   'curr_f_30_39',
+    'curr_m_40plus',  'curr_f_40plus',
     'curr_m_dur_unk', 'curr_f_dur_unk',
 ]
 
@@ -63,19 +84,20 @@ def _parse_c04(filepath: str) -> pd.DataFrame:
                 'area_name', 'state_code']:
         raw[col] = raw[col].astype(str).str.strip()
     raw = raw[~raw['age_at_marriage'].isin(EXCLUDE_AGES)]
-    for c in C04_COLS[6:]:
+    for c in C04_COLS[7:]:
         raw[c] = pd.to_numeric(raw[c], errors='coerce').fillna(0)
     return raw.reset_index(drop=True)
 
 
 def _compute_c04_for_bracket(df: pd.DataFrame, bracket: str) -> dict:
     """
-    CMPR = (ever-married in bracket) / (total ever-married, all ages) × 100
+    CMPR = (ever-married in bracket) / (total ever-married, all ages) × 100.
+    The denominator is the explicit 'All ages' row; falls back to summing all
+    non-bracket, non-excluded rows if that row is absent.
     """
     br_rows = _rows_for_bracket(df, 'age_at_marriage', bracket, AGE_BRACKET_MARRIAGE)
     all_row = df[df['age_at_marriage'].str.lower() == ALL_AGES_LABEL.lower()]
 
-    # Fallback: if no explicit 'All ages' row, sum all non-bracket rows
     if all_row.empty:
         all_row = df[~df['age_at_marriage'].str.lower().isin(
             {l for v in AGE_BRACKET_MARRIAGE.values() for l in v} |
@@ -110,26 +132,30 @@ def build_c04_indexes(dataset_key: str = 'C-04') -> pd.DataFrame:
                 rows.append(idx)
         except Exception as e:
             print(f"      [WARN] {fp}: {e}")
+    print(f"    C-04: {len(rows)} bracket-rows assembled")
     return pd.DataFrame(rows)
 
 
 # =============================================================================
 # SECTION 2 — C-06   (Education × Age at Marriage)
-# Columns: CMPR_{edu_level}_male, CMPR_{edu_level}_female
-# edu levels: illiterate | below_primary | primary | middle | matric
+# Bracket map : AGE_BRACKET_MARRIAGE (exact 2-year bands + '34+')
+# Columns     : CMPR_{edu_level}_male, CMPR_{edu_level}_female
+# edu levels  : illiterate | below_primary | primary | middle | matric
+#
+# All eight canonical brackets are cleanly supported by C-06's 2-year bands.
 # =============================================================================
 
 C06_COLS = [
-    'table_name', 'state_code', 'district_code', 'area_name', 'area_type',
+    'table_name', 'state_code', 'district_code', 'tehsil_code', 'area_name', 'area_type',
     'edu_level', 'age_at_marriage',
     'ever_married_m', 'ever_married_f',
-    'curr_m_all', 'curr_f_all',
-    'curr_m_0_4', 'curr_f_0_4',
-    'curr_m_5_9', 'curr_f_5_9',
-    'curr_m_10_19', 'curr_f_10_19',
-    'curr_m_20_29', 'curr_f_20_29',
-    'curr_m_30_39', 'curr_f_30_39',
-    'curr_m_40plus', 'curr_f_40plus',
+    'curr_m_all',     'curr_f_all',
+    'curr_m_0_4',     'curr_f_0_4',
+    'curr_m_5_9',     'curr_f_5_9',
+    'curr_m_10_19',   'curr_f_10_19',
+    'curr_m_20_29',   'curr_f_20_29',
+    'curr_m_30_39',   'curr_f_30_39',
+    'curr_m_40plus',  'curr_f_40plus',
     'curr_m_dur_unk', 'curr_f_dur_unk',
 ]
 
@@ -144,7 +170,7 @@ def _parse_c06(filepath: str) -> pd.DataFrame:
                                         .str.strip()
                                         .replace(EDU_LEVEL_ALIASES))
     raw = raw[~raw['age_at_marriage'].isin(EXCLUDE_AGES)]
-    for c in C06_COLS[7:]:
+    for c in C06_COLS[8:]:
         raw[c] = pd.to_numeric(raw[c], errors='coerce').fillna(0)
     return raw.reset_index(drop=True)
 
@@ -199,27 +225,31 @@ def build_c06_indexes(dataset_key: str = 'C-06') -> pd.DataFrame:
                 rows.append(idx)
         except Exception as e:
             print(f"      [WARN] {fp}: {e}")
+    print(f"    C-06: {len(rows)} bracket-rows assembled")
     return pd.DataFrame(rows)
 
 
 # =============================================================================
 # SECTION 3 — C-07   (Economic Activity × Age at Marriage)
-# Columns: CMPR_{econ_category}_male, CMPR_{econ_category}_female
-# Categories: main_workers | cultivators | agri_labourers |
-#             household_industry | other_workers | non_workers
+# Bracket map : AGE_BRACKET_MARRIAGE (exact 2-year bands + '34+')
+# Columns     : CMPR_{econ_category}_male, CMPR_{econ_category}_female
+# Categories  : main_workers | cultivators | agri_labourers |
+#               household_industry | other_workers | non_workers
+#
+# All eight canonical brackets are cleanly supported by C-07's 2-year bands.
 # =============================================================================
 
 C07_COLS = [
-    'table_name', 'state_code', 'district_code', 'area_name', 'area_type',
+    'table_name', 'state_code', 'district_code', 'tehsil_code', 'area_name', 'area_type',
     'econ_activity', 'age_at_marriage',
     'ever_married_m', 'ever_married_f',
-    'curr_m_all', 'curr_f_all',
-    'curr_m_0_4', 'curr_f_0_4',
-    'curr_m_5_9', 'curr_f_5_9',
-    'curr_m_10_19', 'curr_f_10_19',
-    'curr_m_20_29', 'curr_f_20_29',
-    'curr_m_30_39', 'curr_f_30_39',
-    'curr_m_40plus', 'curr_f_40plus',
+    'curr_m_all',     'curr_f_all',
+    'curr_m_0_4',     'curr_f_0_4',
+    'curr_m_5_9',     'curr_f_5_9',
+    'curr_m_10_19',   'curr_f_10_19',
+    'curr_m_20_29',   'curr_f_20_29',
+    'curr_m_30_39',   'curr_f_30_39',
+    'curr_m_40plus',  'curr_f_40plus',
     'curr_m_dur_unk', 'curr_f_dur_unk',
 ]
 
@@ -231,7 +261,7 @@ def _parse_c07(filepath: str) -> pd.DataFrame:
                 'age_at_marriage', 'area_name', 'state_code']:
         raw[col] = raw[col].astype(str).str.strip()
     raw = raw[~raw['age_at_marriage'].isin(EXCLUDE_AGES)]
-    for c in C07_COLS[7:]:
+    for c in C07_COLS[8:]:
         raw[c] = pd.to_numeric(raw[c], errors='coerce').fillna(0)
     return raw.reset_index(drop=True)
 
@@ -284,38 +314,44 @@ def build_c07_indexes(dataset_key: str = 'C-07') -> pd.DataFrame:
                 rows.append(idx)
         except Exception as e:
             print(f"      [WARN] {fp}: {e}")
+    print(f"    C-07: {len(rows)} bracket-rows assembled")
     return pd.DataFrame(rows)
 
 
 # =============================================================================
-# SECTION 4 — C-08   (Education level × Age × Sex)              ← NEW
-# Columns: Literacy_rate_total_male/female,
-#          Illiteracy_rate_total_male/female,
-#          Below_primary_share_total_male/female
+# SECTION 4 — C-08   (Education level × Age × Sex)
+# Bracket map : AGE_BRACKET_C08  (individual years 7-19, then 5-year bands)
+# Columns     : Literacy_rate_total_male/female,
+#               Illiteracy_rate_total_male/female,
+#               Below_primary_share_total_male/female,
+#               Graduate_share_total_male/female
 #
-# NOTE: age_18_21 captures only ages 18-19.
-#       Ages 20-21 cannot be separated from the '20-24' grouped band.
+# NOTE: age_18_21 sums only ages 18-19 (20-21 inseparable from 20-24 band).
+#       age_22_25 uses the 20-24 band (covers 20-24, not 22-25); APPROXIMATE.
+#       age_26_29 uses the 25-29 band (covers 25-29, not 26-29); APPROXIMATE.
+#       age_30_33 uses the 30-34 band (covers 30-34, not 30-33); APPROXIMATE.
+#       age_34_plus uses 35-39 … 80+ bands; starts at 35;        APPROXIMATE.
 # =============================================================================
 
 C08_COLS = [
-    'table_name', 'state_code', 'district_code', 'area_name', 'area_type',
+    'table_name', 'state_code', 'district_code', 'tehsil_code', 'area_name', 'area_type',
     'age_group',
-    'total_p', 'total_m', 'total_f',
-    'illiterate_p', 'illiterate_m', 'illiterate_f',
-    'literate_p', 'literate_m', 'literate_f',
-    'lit_no_edu_p', 'lit_no_edu_m', 'lit_no_edu_f',
+    'total_p',         'total_m',         'total_f',
+    'illiterate_p',    'illiterate_m',    'illiterate_f',
+    'literate_p',      'literate_m',      'literate_f',
+    'lit_no_edu_p',    'lit_no_edu_m',    'lit_no_edu_f',
     'below_primary_p', 'below_primary_m', 'below_primary_f',
-    'primary_p', 'primary_m', 'primary_f',
-    'middle_p', 'middle_m', 'middle_f',
-    'matric_p', 'matric_m', 'matric_f',
-    'higher_sec_p', 'higher_sec_m', 'higher_sec_f',
-    'non_tech_dip_p', 'non_tech_dip_m', 'non_tech_dip_f',
-    'tech_dip_p', 'tech_dip_m', 'tech_dip_f',
-    'graduate_p', 'graduate_m', 'graduate_f',
-    'unclassified_p', 'unclassified_m', 'unclassified_f',
+    'primary_p',       'primary_m',       'primary_f',
+    'middle_p',        'middle_m',        'middle_f',
+    'matric_p',        'matric_m',        'matric_f',
+    'higher_sec_p',    'higher_sec_m',    'higher_sec_f',
+    'non_tech_dip_p',  'non_tech_dip_m',  'non_tech_dip_f',
+    'tech_dip_p',      'tech_dip_m',      'tech_dip_f',
+    'graduate_p',      'graduate_m',      'graduate_f',
+    'unclassified_p',  'unclassified_m',  'unclassified_f',
 ]
 
-C08_VALUE_COLS = C08_COLS[6:]
+C08_VALUE_COLS = C08_COLS[7:]
 
 
 def _parse_c08(filepath: str) -> pd.DataFrame:
@@ -339,14 +375,16 @@ def _compute_c08_for_bracket(df: pd.DataFrame, bracket: str) -> dict:
     p   = 'total'
     agg = _sum_bracket(df, 'age_group', C08_VALUE_COLS, bracket, AGE_BRACKET_C08)
 
-    tot_m     = agg['total_m']
-    tot_f     = agg['total_f']
-    lit_m     = agg['literate_m']
-    lit_f     = agg['literate_f']
-    illit_m   = agg['illiterate_m']
-    illit_f   = agg['illiterate_f']
-    bp_m      = agg['below_primary_m']
-    bp_f      = agg['below_primary_f']
+    tot_m   = agg['total_m']
+    tot_f   = agg['total_f']
+    lit_m   = agg['literate_m']
+    lit_f   = agg['literate_f']
+    illit_m = agg['illiterate_m']
+    illit_f = agg['illiterate_f']
+    bp_m    = agg['below_primary_m']
+    bp_f    = agg['below_primary_f']
+    grad_m  = agg['graduate_m']
+    grad_f  = agg['graduate_f']
 
     return {
         f'Literacy_rate_{p}_male'         : safe_div(lit_m,   tot_m),
@@ -355,6 +393,8 @@ def _compute_c08_for_bracket(df: pd.DataFrame, bracket: str) -> dict:
         f'Illiteracy_rate_{p}_female'     : safe_div(illit_f, tot_f),
         f'Below_primary_share_{p}_male'   : safe_div(bp_m,    lit_m),
         f'Below_primary_share_{p}_female' : safe_div(bp_f,    lit_f),
+        f'Graduate_share_{p}_male'        : safe_div(grad_m,  lit_m),
+        f'Graduate_share_{p}_female'      : safe_div(grad_f,  lit_f),
     }
 
 
@@ -378,36 +418,39 @@ def build_c08_indexes(dataset_key: str = 'C-08') -> pd.DataFrame:
                 rows.append(idx)
         except Exception as e:
             print(f"      [WARN] {fp}: {e}")
+    print(f"    C-08: {len(rows)} bracket-rows assembled")
     return pd.DataFrame(rows)
 
 
 # =============================================================================
-# SECTION 5 — C-12   (School attendance × Economic activity, age 5-19) ← NEW
-# Columns: School_attendance_rate_total_male/female,
-#          Dropout_rate_total_male/female,
-#          Child_labour_attending_total_male/female,
-#          Child_labour_dropout_total_male/female,
-#          Non_worker_dropout_total_female
+# SECTION 5 — C-12   (School attendance × Economic activity, age 5-19)
+# Bracket map : AGE_BRACKET_C12  (individual years 5-19; sums required)
+# Columns     : School_attendance_rate_total_male/female,
+#               Dropout_rate_total_male/female,
+#               Child_labour_attending_total_male/female,
+#               Child_labour_dropout_total_male/female,
+#               Non_worker_dropout_total_female
 #
 # NOTE: age_below10 covers only ages 5-9 (no data for 0-4 in C-12).
 #       age_18_21 covers only ages 18-19 (dataset ends at 19).
+#       age_22_25 / age_26_29 / age_30_33 / age_34_plus → NaN (unavailable).
 # =============================================================================
 
 C12_COLS = [
-    'table_name', 'state_code', 'district_code', 'area_name', 'area_type',
+    'table_name', 'state_code', 'district_code', 'tehsil_code', 'area_name', 'area_type',
     'age_group',
-    'total_p', 'total_m', 'total_f',
-    'att_main_p',   'att_main_m',   'att_main_f',
-    'att_marg36_p', 'att_marg36_m', 'att_marg36_f',
-    'att_marg3_p',  'att_marg3_m',  'att_marg3_f',
-    'att_nonw_p',   'att_nonw_m',   'att_nonw_f',
+    'total_p',      'total_m',      'total_f',
+    'att_main_p',    'att_main_m',    'att_main_f',
+    'att_marg36_p',  'att_marg36_m',  'att_marg36_f',
+    'att_marg3_p',   'att_marg3_m',   'att_marg3_f',
+    'att_nonw_p',    'att_nonw_m',    'att_nonw_f',
     'natt_main_p',   'natt_main_m',   'natt_main_f',
     'natt_marg36_p', 'natt_marg36_m', 'natt_marg36_f',
     'natt_marg3_p',  'natt_marg3_m',  'natt_marg3_f',
     'natt_nonw_p',   'natt_nonw_m',   'natt_nonw_f',
 ]
 
-C12_VALUE_COLS = C12_COLS[6:]
+C12_VALUE_COLS = C12_COLS[7:]
 
 
 def _parse_c12(filepath: str) -> pd.DataFrame:
@@ -428,7 +471,8 @@ def _compute_c12_for_bracket(df: pd.DataFrame, bracket: str) -> dict:
     """
     School attendance, dropout, and child labour indexes for the general
     population.  Uses AGE_BRACKET_C12 — individual-year rows summed via
-    _sum_bracket.  Returns NaN for any bracket with no matching rows.
+    _sum_bracket.  Returns NaN for any bracket with no matching rows (e.g.
+    age_22_25 and above, which are unavailable because C-12 ends at age 19).
     """
     p   = 'total'
     agg = _sum_bracket(df, 'age_group', C12_VALUE_COLS, bracket, AGE_BRACKET_C12)
@@ -456,15 +500,15 @@ def _compute_c12_for_bracket(df: pd.DataFrame, bracket: str) -> dict:
     nonw_natt_f = agg['natt_nonw_f']
 
     return {
-        f'School_attendance_rate_{p}_male'   : safe_div(att_m,         tot_m),
-        f'School_attendance_rate_{p}_female' : safe_div(att_f,         tot_f),
-        f'Dropout_rate_{p}_male'             : safe_div(natt_m,        tot_m),
-        f'Dropout_rate_{p}_female'           : safe_div(natt_f,        tot_f),
-        f'Child_labour_attending_{p}_male'   : safe_div(cl_att_m,      tot_m),
-        f'Child_labour_attending_{p}_female' : safe_div(cl_att_f,      tot_f),
-        f'Child_labour_dropout_{p}_male'     : safe_div(cl_natt_m,     tot_m),
-        f'Child_labour_dropout_{p}_female'   : safe_div(cl_natt_f,     tot_f),
-        f'Non_worker_dropout_{p}_female'     : safe_div(nonw_natt_f,   tot_f),
+        f'School_attendance_rate_{p}_male'   : safe_div(att_m,       tot_m),
+        f'School_attendance_rate_{p}_female' : safe_div(att_f,       tot_f),
+        f'Dropout_rate_{p}_male'             : safe_div(natt_m,      tot_m),
+        f'Dropout_rate_{p}_female'           : safe_div(natt_f,      tot_f),
+        f'Child_labour_attending_{p}_male'   : safe_div(cl_att_m,    tot_m),
+        f'Child_labour_attending_{p}_female' : safe_div(cl_att_f,    tot_f),
+        f'Child_labour_dropout_{p}_male'     : safe_div(cl_natt_m,   tot_m),
+        f'Child_labour_dropout_{p}_female'   : safe_div(cl_natt_f,   tot_f),
+        f'Non_worker_dropout_{p}_female'     : safe_div(nonw_natt_f, tot_f),
     }
 
 
@@ -488,6 +532,7 @@ def build_c12_indexes(dataset_key: str = 'C-12') -> pd.DataFrame:
                 rows.append(idx)
         except Exception as e:
             print(f"      [WARN] {fp}: {e}")
+    print(f"    C-12: {len(rows)} bracket-rows assembled")
     return pd.DataFrame(rows)
 
 
@@ -496,15 +541,15 @@ def build_c12_indexes(dataset_key: str = 'C-12') -> pd.DataFrame:
 # =============================================================================
 
 def build_df_total() -> pd.DataFrame:
-    print("\n[df_total] Building from C-04, C-06, C-07, C-08, C-12 ...")
+    print("\n[df_total] Building from C-04, C-06, C-07, C-08, C-12 …")
     c04 = build_c04_indexes('C-04')
     c06 = build_c06_indexes('C-06')
     c07 = build_c07_indexes('C-07')
-    c08 = build_c08_indexes('C-08')     # NEW
-    c12 = build_c12_indexes('C-12')     # NEW
+    c08 = build_c08_indexes('C-08')
+    c12 = build_c12_indexes('C-12')
     df  = _outer_merge(_outer_merge(c04, c06, on=GEO_KEYS), c07, on=GEO_KEYS)
-    df  = _outer_merge(df, c08, on=GEO_KEYS)   # NEW
-    df  = _outer_merge(df, c12, on=GEO_KEYS)   # NEW
+    df  = _outer_merge(df, c08, on=GEO_KEYS)
+    df  = _outer_merge(df, c12, on=GEO_KEYS)
     print(f"  df_total assembled: {df.shape[0]} rows × {df.shape[1]} cols")
     return df
 

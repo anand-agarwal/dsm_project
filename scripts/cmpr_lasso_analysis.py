@@ -1,770 +1,586 @@
 """
-CMPR LASSO Analysis — 2001 vs 2011 Comparison Framework
-=========================================================
-This script runs LASSO regression separately on each year's data,
-then produces a side-by-side comparison of which predictors changed.
+Age-wise CMPR LASSO analysis for the new gender-wise 2011 datasets.
 
-Key notes:
-  1. Religion CMPR for 2001 is pre-computed — run append_religion_cmpr_2001.py
-     once to update df_religion_state_2001.csv before running this script.
-  2. Religion CONFIGS use group-specific targets (CMPR_hindu_female etc.)
-  3. R²_cv is computed via manual LOO to avoid sklearn NaN propagation.
+What this script does
+---------------------
+1. Loads the gender-specific CSV files from output_datasets_new_2011.
+2. Builds separate LASSO models for each dataset, gender, and age bracket.
+3. Uses only one target column per file:
+   - SC female  -> CMPR_SC_female
+   - SC male    -> CMPR_SC_male
+   - ST female  -> CMPR_ST_female
+   - ST male    -> CMPR_ST_male
+   - Total female -> CMPR_total_female
+   - Total male   -> CMPR_total_male
+4. For each age bracket, automatically skips predictor columns that are:
+   - entirely missing for that bracket
+   - too sparse to be usable
+   - constant after filtering
+   - causing the usable sample to drop below the minimum row threshold
+5. Saves age-wise coefficient plots, heatmaps, model-performance plots,
+   and a summary CSV.
 """
 
-import pandas as pd
-import numpy as np
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-from matplotlib.gridspec import GridSpec
-from sklearn.linear_model import LassoCV, Lasso
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import LeaveOneOut
-from sklearn.metrics import r2_score
-from sklearn.pipeline import Pipeline
-import warnings
-warnings.filterwarnings('ignore')
-import sys
 import os
+import sys
+import warnings
 from datetime import datetime
 
-# ── Paths ──────────────────────────────────────────────────────────────────────
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from sklearn.linear_model import Lasso, LassoCV
+from sklearn.metrics import r2_score
+from sklearn.model_selection import LeaveOneOut
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 
-# 2001 files
-SC_PATH_2001      = 'output_datasets_2001/df_SC_state_2001.csv'
-ST_PATH_2001      = 'output_datasets_2001/df_ST_state_2001.csv'
-REL_PATH_2001     = 'output_datasets_2001/df_religion_state_2001.csv'
+warnings.filterwarnings("ignore")
 
-# 2011 files
-SC_PATH_2011      = 'output_datasets_2011/df_SC_state_2011.csv'
-ST_PATH_2011      = 'output_datasets_2011/df_ST_state_2011.csv'
-REL_PATH_2011     = 'output_datasets_2011/df_religion_state_2011.csv'
-TOTAL_PATH_2011   = 'output_datasets_2011/df_total_state_2011.csv'
 
-# Total population files
-TOTAL_PATH_2001   = 'output_datasets_2001/df_total_state_2001.csv'
+DATA_DIR = "/Users/anandagarwal/dsm_project/output_datasets_2011_new"
+OUT_DIR = "regression_outputs_2001/lasso_agewise"
 
-OUT_DIR = 'regression_outputs/lasso/'
+GEO_COLS = ["state_name", "age_bracket", "state_code"]
+AGE_BRACKETS = [
+    "age_below10",
+    "age_10_13",
+    "age_14_17",
+    "age_18_21",
+    "age_22_25",
+    "age_26_29",
+    "age_30_33",
+    "age_34_plus",
+]
 
-# ── Predictor / target config per dataset ─────────────────────────────────────
-CONFIGS = {
-    'SC': {
-        'predictors': [
-            'Literacy_rate_SC_female', 'Literacy_rate_SC_male',
-            'Illiteracy_rate_SC_female', 'Illiteracy_rate_SC_male',
-            'Dropout_rate_SC_female', 'Dropout_rate_SC_male',
-            'School_attendance_rate_SC_female', 'School_attendance_rate_SC_male',
-            'Child_labour_dropout_SC_female', 'Child_labour_dropout_SC_male',
-            'Child_labour_attending_SC_female', 'Child_labour_attending_SC_male',
-            'Non_worker_dropout_SC_female',
-            'Below_primary_share_SC_female', 'Below_primary_share_SC_male',
-        ],
-        'targets': {'female': 'CMPR_SC_female', 'male': 'CMPR_SC_male'},
+DATASETS = {
+    "SC": {
+        "female": os.path.join(DATA_DIR, "df_SC_female.csv"),
+        "male": os.path.join(DATA_DIR, "df_SC_male.csv"),
+        "target_prefix": "CMPR_SC",
     },
-    'ST': {
-        'predictors': [
-            'Literacy_rate_ST_female', 'Literacy_rate_ST_male',
-            'Illiteracy_rate_ST_female', 'Illiteracy_rate_ST_male',
-            'Dropout_rate_ST_female', 'Dropout_rate_ST_male',
-            'School_attendance_rate_ST_female', 'School_attendance_rate_ST_male',
-            'Child_labour_dropout_ST_female', 'Child_labour_dropout_ST_male',
-            'Child_labour_attending_ST_female', 'Child_labour_attending_ST_male',
-            'Non_worker_dropout_ST_female',
-            'Below_primary_share_ST_female', 'Below_primary_share_ST_male',
-        ],
-        'targets': {'female': 'CMPR_ST_female', 'male': 'CMPR_ST_male'},
+    "ST": {
+        "female": os.path.join(DATA_DIR, "df_ST_female.csv"),
+        "male": os.path.join(DATA_DIR, "df_ST_male.csv"),
+        "target_prefix": "CMPR_ST",
     },
-    'Hindu': {
-        'predictors': [
-            'Literacy_rate_hindu_female', 'Literacy_rate_hindu_male',
-            'Illiteracy_rate_hindu_female', 'Illiteracy_rate_hindu_male',
-            'Below_primary_share_hindu_female', 'Middle_school_share_hindu_female',
-        ],
-        'targets': {'female': 'CMPR_hindu_female', 'male': 'CMPR_hindu_male'},
-    },
-    'Muslim': {
-        'predictors': [
-            'Literacy_rate_muslim_female', 'Literacy_rate_muslim_male',
-            'Illiteracy_rate_muslim_female', 'Illiteracy_rate_muslim_male',
-            'Below_primary_share_muslim_female', 'Middle_school_share_muslim_female',
-        ],
-        'targets': {'female': 'CMPR_muslim_female', 'male': 'CMPR_muslim_male'},
-    },
-    'Christian': {
-        'predictors': [
-            'Literacy_rate_christian_female', 'Literacy_rate_christian_male',
-            'Illiteracy_rate_christian_female', 'Illiteracy_rate_christian_male',
-            'Below_primary_share_christian_female', 'Middle_school_share_christian_female',
-        ],
-        'targets': {'female': 'CMPR_christian_female', 'male': 'CMPR_christian_male'},
-    },
-    'Total': {
-        # Predictors restricted to columns present in BOTH 2001 and 2011.
-        # 2011 is missing Child_labour_*, Dropout_rate_*, School_attendance_rate_*,
-        # and Non_worker_dropout_* — so those are excluded here.
-        'predictors': [
-            'Literacy_rate_total_female', 'Literacy_rate_total_male',
-            'Illiteracy_rate_total_female', 'Illiteracy_rate_total_male',
-            'Below_primary_share_total_female', 'Below_primary_share_total_male',
-        ],
-        'targets': {'female': 'CMPR_total_female', 'male': 'CMPR_total_male'},
+    "Total": {
+        "female": os.path.join(DATA_DIR, "df_total_female.csv"),
+        "male": os.path.join(DATA_DIR, "df_total_male.csv"),
+        "target_prefix": "CMPR_total",
     },
 }
 
-# Short display names for predictors (used in plots)
 SHORT_NAMES = {
-    'Literacy_rate_SC_female':              'Literacy (SC F)',
-    'Literacy_rate_SC_male':                'Literacy (SC M)',
-    'Illiteracy_rate_SC_female':            'Illiteracy (SC F)',
-    'Illiteracy_rate_SC_male':              'Illiteracy (SC M)',
-    'Dropout_rate_SC_female':               'Dropout (SC F)',
-    'Dropout_rate_SC_male':                 'Dropout (SC M)',
-    'School_attendance_rate_SC_female':     'Attendance (SC F)',
-    'School_attendance_rate_SC_male':       'Attendance (SC M)',
-    'Child_labour_dropout_SC_female':       'CL dropout (SC F)',
-    'Child_labour_dropout_SC_male':         'CL dropout (SC M)',
-    'Child_labour_attending_SC_female':     'CL attending (SC F)',
-    'Child_labour_attending_SC_male':       'CL attending (SC M)',
-    'Non_worker_dropout_SC_female':         'Non-worker dropout (F)',
-    'Below_primary_share_SC_female':        'Below primary (SC F)',
-    'Below_primary_share_SC_male':          'Below primary (SC M)',
-    'Literacy_rate_ST_female':              'Literacy (ST F)',
-    'Literacy_rate_ST_male':                'Literacy (ST M)',
-    'Illiteracy_rate_ST_female':            'Illiteracy (ST F)',
-    'Illiteracy_rate_ST_male':              'Illiteracy (ST M)',
-    'Dropout_rate_ST_female':               'Dropout (ST F)',
-    'Dropout_rate_ST_male':                 'Dropout (ST M)',
-    'School_attendance_rate_ST_female':     'Attendance (ST F)',
-    'School_attendance_rate_ST_male':       'Attendance (ST M)',
-    'Child_labour_dropout_ST_female':       'CL dropout (ST F)',
-    'Child_labour_dropout_ST_male':         'CL dropout (ST M)',
-    'Child_labour_attending_ST_female':     'CL attending (ST F)',
-    'Child_labour_attending_ST_male':       'CL attending (ST M)',
-    'Non_worker_dropout_ST_female':         'Non-worker dropout (F)',
-    'Below_primary_share_ST_female':        'Below primary (ST F)',
-    'Below_primary_share_ST_male':          'Below primary (ST M)',
-    'Literacy_rate_hindu_female':           'Literacy (Hindu F)',
-    'Literacy_rate_hindu_male':             'Literacy (Hindu M)',
-    'Illiteracy_rate_hindu_female':         'Illiteracy (Hindu F)',
-    'Illiteracy_rate_hindu_male':           'Illiteracy (Hindu M)',
-    'Below_primary_share_hindu_female':     'Below primary (Hindu F)',
-    'Middle_school_share_hindu_female':     'Middle school (Hindu F)',
-    'Literacy_rate_muslim_female':          'Literacy (Muslim F)',
-    'Literacy_rate_muslim_male':            'Literacy (Muslim M)',
-    'Illiteracy_rate_muslim_female':        'Illiteracy (Muslim F)',
-    'Illiteracy_rate_muslim_male':          'Illiteracy (Muslim M)',
-    'Below_primary_share_muslim_female':    'Below primary (Muslim F)',
-    'Middle_school_share_muslim_female':    'Middle school (Muslim F)',
-    'Literacy_rate_christian_female':       'Literacy (Christian F)',
-    'Literacy_rate_christian_male':         'Literacy (Christian M)',
-    'Illiteracy_rate_christian_female':     'Illiteracy (Christian F)',
-    'Illiteracy_rate_christian_male':       'Illiteracy (Christian M)',
-    'Below_primary_share_christian_female': 'Below primary (Christian F)',
-    'Middle_school_share_christian_female': 'Middle school (Christian F)',
-    'Literacy_rate_total_female':           'Literacy (Total F)',
-    'Literacy_rate_total_male':             'Literacy (Total M)',
-    'Illiteracy_rate_total_female':         'Illiteracy (Total F)',
-    'Illiteracy_rate_total_male':           'Illiteracy (Total M)',
-    'Below_primary_share_total_female':     'Below primary (Total F)',
-    'Below_primary_share_total_male':       'Below primary (Total M)',
+    "Literacy_rate_SC_female": "Literacy",
+    "Illiteracy_rate_SC_female": "Illiteracy",
+    "Dropout_rate_SC_female": "Dropout",
+    "School_attendance_rate_SC_female": "Attendance",
+    "Child_labour_dropout_SC_female": "CL dropout",
+    "Child_labour_attending_SC_female": "CL attending",
+    "Non_worker_dropout_SC_female": "Non-worker dropout",
+    "Below_primary_share_SC_female": "Below primary",
+    "Literacy_rate_SC_male": "Literacy",
+    "Illiteracy_rate_SC_male": "Illiteracy",
+    "Dropout_rate_SC_male": "Dropout",
+    "School_attendance_rate_SC_male": "Attendance",
+    "Child_labour_dropout_SC_male": "CL dropout",
+    "Child_labour_attending_SC_male": "CL attending",
+    "Below_primary_share_SC_male": "Below primary",
+    "Literacy_rate_ST_female": "Literacy",
+    "Illiteracy_rate_ST_female": "Illiteracy",
+    "Dropout_rate_ST_female": "Dropout",
+    "School_attendance_rate_ST_female": "Attendance",
+    "Child_labour_dropout_ST_female": "CL dropout",
+    "Child_labour_attending_ST_female": "CL attending",
+    "Non_worker_dropout_ST_female": "Non-worker dropout",
+    "Below_primary_share_ST_female": "Below primary",
+    "Literacy_rate_ST_male": "Literacy",
+    "Illiteracy_rate_ST_male": "Illiteracy",
+    "Dropout_rate_ST_male": "Dropout",
+    "School_attendance_rate_ST_male": "Attendance",
+    "Child_labour_dropout_ST_male": "CL dropout",
+    "Child_labour_attending_ST_male": "CL attending",
+    "Below_primary_share_ST_male": "Below primary",
+    "Below_primary_share_total_female": "Below primary share",
+    "Illiteracy_rate_total_female": "Illiteracy",
+    "Literacy_rate_total_female": "Literacy",
+    "Below_primary_share_total_male": "Below primary share",
+    "Illiteracy_rate_total_male": "Illiteracy",
+    "Literacy_rate_total_male": "Literacy",
+    "Graduate_share_SC_female": "Graduate share",
+    "Graduate_share_SC_male": "Graduate share",
+    "Graduate_share_ST_female": "Graduate share",       
+    "Graduate_share_ST_male": "Graduate share",
+    "Graduate_share_total_female": "Graduate share",
+    "Graduate_share_total_male": "Graduate share"     
 }
 
+COLORS = {
+    "positive": "#d55a3a",
+    "negative": "#2b6ea6",
+    "neutral": "#d7d7d7",
+    "line": "#444444",
+}
 
-# ── Core LASSO function ────────────────────────────────────────────────────────
+MIN_ROWS = 10
+MIN_NON_MISSING = 10
 
-def run_lasso(df_year, predictors, target, bracket='age_14_17',
-              year_label='Year', cv_strategy='loo'):
-    """
-    Fit LassoCV on one year's data for a given target and bracket.
 
-    Parameters
-    ----------
-    df_year      : DataFrame for one census year
-    predictors   : list of predictor column names
-    target       : target column name string
-    bracket      : age bracket to filter on
-    year_label   : string label for this year (e.g. '2001' or '2011')
-    cv_strategy  : 'loo' for Leave-One-Out (best for n<40), or integer k for k-fold
+def infer_target_column(df, dataset_name, gender):
+    expected = f"{DATASETS[dataset_name]['target_prefix']}_{gender}"
+    if expected in df.columns:
+        return expected
+    raise ValueError(f"Target column not found: {expected}")
 
-    Returns
-    -------
-    dict with keys: alpha, r2_train, r2_cv, coefs (Series), n, year_label, target
-    """
-    df = df_year[
-        (df_year['age_bracket'] == bracket) &
-        (df_year['state_name'] != 'INDIA')
-    ][predictors + [target]].dropna().reset_index(drop=True)
 
-    if len(df) < 10:
-        print(f"  ⚠ {year_label} {target}: only {len(df)} rows after dropna — skipping")
-        return None
+def infer_predictor_columns(df, target_col):
+    predictors = []
+    for col in df.columns:
+        if col in GEO_COLS or col == target_col:
+            continue
+        if col == "CMPR_SC_persons" or col == "CMPR_ST_persons":
+            continue
+        if target_col.startswith("CMPR_total_") and col.startswith("CMPR_"):
+            continue
+        predictors.append(col)
+    return predictors
 
-    X = df[predictors].values
-    y = df[target].values
-    n = len(df)
 
-    scaler = StandardScaler()
-    X_sc = scaler.fit_transform(X)
+def filter_predictors_for_bracket(df_bracket, predictor_cols, target_col,
+                                  min_rows=MIN_ROWS, min_non_missing=MIN_NON_MISSING):
+    eligible = []
+    skipped = []
 
-    # LOO is best for small n; fall back to it if n < 40 regardless of setting
-    cv = LeaveOneOut() if (cv_strategy == 'loo' or n < 40) else cv_strategy
+    for col in predictor_cols:
+        non_missing = int(df_bracket[col].notna().sum())
+        if non_missing == 0:
+            skipped.append((col, "all_missing"))
+            continue
+        if non_missing < min_non_missing:
+            skipped.append((col, f"too_sparse_{non_missing}"))
+            continue
+        if df_bracket[col].dropna().nunique() <= 1:
+            skipped.append((col, "constant"))
+            continue
+        eligible.append(col)
 
-    # Fit LassoCV
-    alphas = np.logspace(-3, 2, 100)
-    lasso = LassoCV(alphas=alphas, cv=cv, max_iter=20000, random_state=42)
-    lasso.fit(X_sc, y)
+    kept = eligible.copy()
+    while kept:
+        df_model = df_bracket[[target_col] + kept].dropna()
+        if len(df_model) >= min_rows:
+            return kept, skipped, df_model
 
-    # CV R² — computed manually via LOO to avoid sklearn's NaN propagation.
+        missing_counts = {
+            col: int(df_bracket[col].isna().sum())
+            for col in kept
+        }
+        worst = max(kept, key=lambda c: (missing_counts[c], -df_bracket[c].notna().sum(), c))
+        kept.remove(worst)
+        skipped.append((worst, "dropped_to_preserve_rows"))
+
+    df_model = df_bracket[[target_col]].dropna()
+    return [], skipped, df_model
+
+
+def run_lasso_for_bracket(df, dataset_name, gender, bracket, min_rows=MIN_ROWS):
+    target_col = infer_target_column(df, dataset_name, gender)
+    predictor_candidates = infer_predictor_columns(df, target_col)
+
+    df_bracket = (
+        df[(df["age_bracket"] == bracket) & (df["state_name"] != "INDIA")]
+        .copy()
+        .reset_index(drop=True)
+    )
+
+    if df_bracket.empty:
+        return {
+            "dataset": dataset_name,
+            "gender": gender,
+            "bracket": bracket,
+            "target": target_col,
+            "status": "skipped",
+            "reason": "no_rows_for_bracket",
+        }
+
+    kept_predictors, skipped_predictors, df_model = filter_predictors_for_bracket(
+        df_bracket=df_bracket,
+        predictor_cols=predictor_candidates,
+        target_col=target_col,
+        min_rows=min_rows,
+    )
+
+    if len(kept_predictors) == 0:
+        return {
+            "dataset": dataset_name,
+            "gender": gender,
+            "bracket": bracket,
+            "target": target_col,
+            "status": "skipped",
+            "reason": "no_predictors_left_after_filtering",
+            "n_rows": int(len(df_model)),
+            "skipped_predictors": skipped_predictors,
+        }
+
+    if len(df_model) < min_rows:
+        return {
+            "dataset": dataset_name,
+            "gender": gender,
+            "bracket": bracket,
+            "target": target_col,
+            "status": "skipped",
+            "reason": f"too_few_rows_{len(df_model)}",
+            "n_rows": int(len(df_model)),
+            "used_predictors": kept_predictors,
+            "skipped_predictors": skipped_predictors,
+        }
+
+    X = df_model[kept_predictors].values
+    y = df_model[target_col].values
+    n = len(df_model)
 
     loo = LeaveOneOut()
+    alphas = np.logspace(-3, 2, 100)
+    model = LassoCV(alphas=alphas, cv=loo, max_iter=20000, random_state=42)
+    X_scaled = StandardScaler().fit_transform(X)
+    model.fit(X_scaled, y)
+
     loo_preds = np.empty(n)
     for train_idx, test_idx in loo.split(X):
         pipe = Pipeline([
-            ('scaler', StandardScaler()),
-            ('lasso',  Lasso(alpha=lasso.alpha_, max_iter=20000))
+            ("scaler", StandardScaler()),
+            ("lasso", Lasso(alpha=model.alpha_, max_iter=20000)),
         ])
         pipe.fit(X[train_idx], y[train_idx])
         loo_preds[test_idx] = pipe.predict(X[test_idx])
-    # r2_score on the full vector is equivalent to LOO-R² and never NaNs
-    r2_cv = float(r2_score(y, loo_preds))
 
-    coefs = pd.Series(lasso.coef_, index=predictors)
+    coefs = pd.Series(model.coef_, index=kept_predictors)
+    selected = coefs[coefs != 0].sort_values(key=np.abs, ascending=False)
 
     return {
-        'year_label': year_label,
-        'target':     target,
-        'bracket':    bracket,
-        'alpha':      lasso.alpha_,
-        'r2_train':   lasso.score(X_sc, y),
-        'r2_cv':      r2_cv,
-        'coefs':      coefs,
-        'n':          n,
-        'n_selected': (coefs != 0).sum(),
-        'selected':   coefs[coefs != 0].sort_values(key=abs, ascending=False),
+        "dataset": dataset_name,
+        "gender": gender,
+        "bracket": bracket,
+        "target": target_col,
+        "status": "ok",
+        "alpha": float(model.alpha_),
+        "r2_train": float(model.score(X_scaled, y)),
+        "r2_cv": float(r2_score(y, loo_preds)),
+        "n_rows": int(n),
+        "n_predictors_used": int(len(kept_predictors)),
+        "n_selected": int((coefs != 0).sum()),
+        "used_predictors": kept_predictors,
+        "skipped_predictors": skipped_predictors,
+        "coefs": coefs,
+        "selected": selected,
     }
 
 
-# ── Year comparison function ───────────────────────────────────────────────────
-
-def run_year_comparison(df_2001, df_2011, dataset='SC', bracket='age_14_17'):
-    """
-    Run LASSO on both years and compare which predictors changed.
-    """
-    cfg = CONFIGS[dataset]
-    predictors = cfg['predictors']
+def run_agewise_models(df, dataset_name, gender):
     results = {}
+    print(f"\n{'=' * 72}")
+    print(f"{dataset_name} | {gender}")
+    print(f"{'=' * 72}")
 
-    print(f"\n{'='*60}")
-    print(f"  LASSO — {dataset} dataset | bracket: {bracket}")
-    print(f"{'='*60}")
+    for bracket in AGE_BRACKETS:
+        result = run_lasso_for_bracket(df, dataset_name, gender, bracket)
+        results[bracket] = result
 
-    for gender, target in cfg['targets'].items():
-        print(f"\n  Target: {target}")
-        r01 = run_lasso(df_2001, predictors, target, bracket, year_label='2001')
-        r11 = run_lasso(df_2011, predictors, target, bracket, year_label='2011')
+        if result["status"] != "ok":
+            print(f"  {bracket:12s} -> skipped ({result['reason']})")
+            continue
 
-        if r01 and r11:
-            results[gender] = {'2001': r01, '2011': r11}
-            _print_comparison(r01, r11)
+        print(
+            f"  {bracket:12s} -> n={result['n_rows']:2d}, "
+            f"predictors={result['n_predictors_used']:2d}, "
+            f"selected={result['n_selected']:2d}, "
+            f"alpha={result['alpha']:.4f}, "
+            f"R2_train={result['r2_train']:.3f}, R2_cv={result['r2_cv']:.3f}"
+        )
+
+        if result["skipped_predictors"]:
+            skipped_names = ", ".join(
+                f"{SHORT_NAMES.get(col, col)} [{reason}]"
+                for col, reason in result["skipped_predictors"]
+            )
+            print(f"    skipped: {skipped_names}")
+
+        if result["selected"].empty:
+            print("    selected predictors: none")
+        else:
+            selected_names = ", ".join(
+                f"{SHORT_NAMES.get(col, col)} ({coef:+.3f})"
+                for col, coef in result["selected"].items()
+            )
+            print(f"    selected predictors: {selected_names}")
 
     return results
 
 
-def _print_comparison(r01, r11):
-    """Print a text summary of what changed between years."""
-    sel01 = set(r01['selected'].index)
-    sel11 = set(r11['selected'].index)
+def plot_coefficients_by_bracket(results, dataset_name, gender):
+    valid = [results[b] for b in AGE_BRACKETS if results[b]["status"] == "ok"]
+    if not valid:
+        return None
 
-    gained = sel11 - sel01
-    lost   = sel01 - sel11
-    kept   = sel01 & sel11
+    n_panels = len(valid)
+    ncols = 2
+    nrows = int(np.ceil(n_panels / ncols))
+    fig, axes = plt.subplots(nrows, ncols, figsize=(14, max(4 * nrows, 6)))
+    axes = np.atleast_1d(axes).flatten()
+    fig.patch.set_facecolor("white")
 
-    print(f"\n    2001: α={r01['alpha']:.4f}, R²_train={r01['r2_train']:.3f}, "
-          f"R²_cv={r01['r2_cv']:.3f}, n={r01['n']}, selected={r01['n_selected']}")
-    print(f"    2011: α={r11['alpha']:.4f}, R²_train={r11['r2_train']:.3f}, "
-          f"R²_cv={r11['r2_cv']:.3f}, n={r11['n']}, selected={r11['n_selected']}")
+    for ax, result in zip(axes, valid):
+        coefs = result["selected"] if not result["selected"].empty else result["coefs"]
+        coefs = coefs.sort_values(key=np.abs, ascending=True)
+        labels = [SHORT_NAMES.get(col, col) for col in coefs.index]
+        colors = [COLORS["positive"] if val > 0 else COLORS["negative"] if val < 0 else COLORS["neutral"]
+                  for val in coefs.values]
 
-    # Flag null results — α at ceiling means LASSO zeroed everything out.
-    # This indicates the predictors have no explanatory power for this
-    # target in that year, not a code error.
-    for label, r in [('2001', r01), ('2011', r11)]:
-        if r['alpha'] >= 99.9 and r['n_selected'] == 0:
-            print(f"    ⚠  {label}: α hit ceiling (100) — LASSO zeroed all predictors. "
-                  f"No explanatory power detected for {r['target']} in {label}. "
-                  f"Check target variance or consider dropping this group-year.")
-
-    if kept:
-        print(f"\n    ✓ Persistent drivers (both years):")
-        for p in kept:
-            c01, c11 = r01['coefs'][p], r11['coefs'][p]
-            direction = '↑ stronger' if abs(c11) > abs(c01) else '↓ weaker'
-            print(f"      {SHORT_NAMES.get(p,p):35s}  2001:{c01:+.3f}  2011:{c11:+.3f}  {direction}")
-
-    if gained:
-        print(f"\n    + Emerged in 2011 (new drivers):")
-        for p in gained:
-            print(f"      {SHORT_NAMES.get(p,p):35s}  2011:{r11['coefs'][p]:+.3f}")
-
-    if lost:
-        print(f"\n    - Dropped out in 2011 (no longer significant):")
-        for p in lost:
-            print(f"      {SHORT_NAMES.get(p,p):35s}  2001:{r01['coefs'][p]:+.3f}")
-
-
-# ── Plotting ───────────────────────────────────────────────────────────────────
-
-COLORS = {
-    'pos_2001': '#D05538',
-    'neg_2001': '#1D6A9E',
-    'pos_2011': '#E8A020',
-    'neg_2011': '#2E9E6A',
-    'zeroed':   '#CCCCCC',
-    'gained':   '#2E9E6A',
-    'lost':     '#D05538',
-    'kept':     '#5555AA',
-}
-
-
-def plot_coefficient_comparison(results_dict, dataset='SC', gender='female',
-                                 title_suffix=''):
-    """
-    Side-by-side horizontal bar chart: 2001 coefficients vs 2011 coefficients.
-    Blue = protective (negative), Red = risk factor (positive).
-    Zeroed-out features shown as grey ticks.
-    """
-    if gender not in results_dict:
-        print(f"No results for gender={gender}")
-        return
-
-    r01 = results_dict[gender]['2001']
-    r11 = results_dict[gender]['2011']
-    predictors = r01['coefs'].index.tolist()
-    short = [SHORT_NAMES.get(p, p) for p in predictors]
-
-    c01 = r01['coefs'].values
-    c11 = r11['coefs'].values
-
-    # Sort by absolute value in 2011 (most important at top)
-    order = np.argsort(np.abs(c11))[::-1]
-    c01_s = c01[order]
-    c11_s = c11[order]
-    labels = [short[i] for i in order]
-
-    n = len(labels)
-    fig, axes = plt.subplots(1, 2, figsize=(14, max(6, n * 0.45 + 1.5)),
-                              sharey=True)
-    fig.patch.set_facecolor('white')
-
-    target_name = r01['target']
-    fig.suptitle(
-        f"LASSO coefficients — {target_name} ({r01['bracket']}){title_suffix}\n"
-        f"Standardised predictors — bar width = effect size on CMPR",
-        fontsize=12, fontweight='bold', y=1.01
-    )
-
-    y_pos = np.arange(n)
-
-    for ax, coefs, year, r in zip(axes, [c01_s, c11_s], ['2001', '2011'], [r01, r11]):
-        colors = [COLORS['neg_2001'] if (c < 0 and year == '2001') else
-                  COLORS['pos_2001'] if (c > 0 and year == '2001') else
-                  COLORS['neg_2011'] if (c < 0 and year == '2011') else
-                  COLORS['pos_2011'] if (c > 0 and year == '2011') else
-                  COLORS['zeroed']
-                  for c in coefs]
-
-        bars = ax.barh(y_pos, coefs, color=colors, edgecolor='white',
-                       linewidth=0.5, height=0.65)
-
-        for i, c in enumerate(coefs):
-            if c == 0:
-                ax.plot([0, 0.001], [i, i], color=COLORS['zeroed'],
-                        linewidth=2, solid_capstyle='round')
-
-        ax.axvline(0, color='#888888', linewidth=0.8, linestyle='--')
+        ax.barh(np.arange(len(coefs)), coefs.values, color=colors, edgecolor="white")
+        ax.axvline(0, color="#888888", linewidth=0.8, linestyle="--")
+        ax.set_yticks(np.arange(len(coefs)))
+        ax.set_yticklabels(labels, fontsize=8)
         ax.set_title(
-            f"{year}\n"
-            f"α = {r['alpha']:.4f}  |  R² train = {r['r2_train']:.2f}"
-            f"  |  R² CV = {r['r2_cv']:.2f}  |  n = {r['n']}",
-            fontsize=9, pad=8
+            f"{result['bracket']} | n={result['n_rows']} | sel={result['n_selected']}",
+            fontsize=10,
+            fontweight="bold",
         )
-        ax.set_yticks(y_pos)
-        ax.set_yticklabels(labels, fontsize=9)
-        ax.set_xlabel('Standardised coefficient', fontsize=9)
-        ax.spines['top'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.tick_params(axis='x', labelsize=8)
+        ax.tick_params(axis="x", labelsize=8)
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
 
-        for i, (bar, c) in enumerate(zip(bars, coefs)):
-            if c != 0:
-                ha = 'left' if c > 0 else 'right'
-                offset = 0.03 if c > 0 else -0.03
-                ax.text(c + offset, i, f'{c:+.2f}',
-                        va='center', ha=ha, fontsize=7.5, color='#333333')
+    for ax in axes[n_panels:]:
+        ax.axis("off")
 
-    axes[0].invert_xaxis()
-
-    legend_elements = [
-        mpatches.Patch(color=COLORS['neg_2001'], label='Protective (−)'),
-        mpatches.Patch(color=COLORS['pos_2001'], label='Risk factor (+)'),
-        mpatches.Patch(color=COLORS['zeroed'],   label='Zeroed by LASSO'),
-    ]
-    fig.legend(handles=legend_elements, loc='lower center', ncol=3,
-               fontsize=9, frameon=False, bbox_to_anchor=(0.5, -0.04))
-
-    plt.tight_layout()
-    fname = f'{OUT_DIR}lasso_{dataset}_{gender}_comparison.png'
-    plt.savefig(fname, dpi=150, bbox_inches='tight', facecolor='white')
-    plt.close()
-    print(f"  → Saved: {fname}")
-    return fname
-
-
-def plot_change_summary(results_dict, dataset='SC', gender='female'):
-    """
-    Single chart showing ONLY the changes between 2001 and 2011:
-    - Green: gained significance in 2011
-    - Red:   lost significance in 2011
-    - Blue:  persistent but coefficient changed size
-    """
-    if gender not in results_dict:
-        return
-
-    r01 = results_dict[gender]['2001']
-    r11 = results_dict[gender]['2011']
-    c01 = r01['coefs']
-    c11 = r11['coefs']
-
-    change = c11 - c01
-    status = []
-    for p in c01.index:
-        if c01[p] == 0 and c11[p] != 0:
-            status.append('gained')
-        elif c01[p] != 0 and c11[p] == 0:
-            status.append('lost')
-        elif c01[p] != 0 and c11[p] != 0:
-            status.append('kept')
-        else:
-            status.append('zeroed_both')
-
-    df_plot = pd.DataFrame({
-        'predictor': [SHORT_NAMES.get(p, p) for p in c01.index],
-        'coef_2001': c01.values,
-        'coef_2011': c11.values,
-        'change':    change.values,
-        'status':    status,
-    })
-    df_plot = df_plot[df_plot['status'] != 'zeroed_both'].sort_values(
-        'change', key=abs, ascending=True)
-
-    if len(df_plot) == 0:
-        print(f"  No changes to plot for {dataset} {gender}")
-        return
-
-    n = len(df_plot)
-    fig, ax = plt.subplots(figsize=(10, max(4, n * 0.5 + 1.5)))
-    fig.patch.set_facecolor('white')
-
-    palette = {'gained': COLORS['gained'], 'lost': COLORS['lost'], 'kept': COLORS['kept']}
-    bar_colors = [palette[s] for s in df_plot['status']]
-
-    y_pos = np.arange(len(df_plot))
-    bars = ax.barh(y_pos, df_plot['change'], color=bar_colors,
-                   edgecolor='white', linewidth=0.5, height=0.65)
-
-    ax.axvline(0, color='#888888', linewidth=0.8, linestyle='--')
-    ax.set_yticks(y_pos)
-    ax.set_yticklabels(df_plot['predictor'], fontsize=9)
-    ax.set_xlabel('Change in coefficient (2011 − 2001)', fontsize=9)
-    ax.set_title(
-        f"What changed between 2001 and 2011?\n"
-        f"Target: {r01['target']} | bracket: {r01['bracket']}",
-        fontsize=11, fontweight='bold'
+    fig.suptitle(
+        f"Age-wise LASSO coefficients | {dataset_name} | {gender}\n"
+        f"Target: {valid[0]['target']}",
+        fontsize=13,
+        fontweight="bold",
     )
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-
-    for i, (bar, row) in enumerate(zip(bars, df_plot.itertuples())):
-        if row.status == 'gained':
-            label = f'NEW  2011:{row.coef_2011:+.2f}'
-        elif row.status == 'lost':
-            label = f'DROPPED  2001:{row.coef_2001:+.2f}'
-        else:
-            label = f'2001:{row.coef_2001:+.2f} → 2011:{row.coef_2011:+.2f}'
-        ha = 'left' if row.change >= 0 else 'right'
-        offset = 0.03 if row.change >= 0 else -0.03
-        ax.text(row.change + offset, i, label, va='center', ha=ha,
-                fontsize=7.5, color='#333333')
-
-    legend_elements = [
-        mpatches.Patch(color=COLORS['gained'], label='New driver in 2011'),
-        mpatches.Patch(color=COLORS['lost'],   label='Dropped out in 2011'),
-        mpatches.Patch(color=COLORS['kept'],   label='Persistent (coefficient changed)'),
-    ]
-    ax.legend(handles=legend_elements, fontsize=8, frameon=False, loc='lower right')
-
     plt.tight_layout()
-    fname = f'{OUT_DIR}lasso_{dataset}_{gender}_changes.png'
-    plt.savefig(fname, dpi=150, bbox_inches='tight', facecolor='white')
+    path = os.path.join(OUT_DIR, f"{dataset_name.lower()}_{gender}_coefficients_by_age.png")
+    plt.savefig(path, dpi=160, bbox_inches="tight", facecolor="white")
     plt.close()
-    print(f"  → Saved: {fname}")
-    return fname
+    print(f"  -> Saved {path}")
+    return path
 
 
-def plot_all_datasets_heatmap(all_results, year='2011', gender='female',
-                               bracket='age_14_17'):
-    """
-    Heatmap: rows = predictors, columns = datasets.
-    Shows which predictors matter universally vs group-specifically.
-    """
-    datasets = list(all_results.keys())
-    all_preds = []
-    coef_matrix = {}
+def plot_agewise_heatmap(results, dataset_name, gender):
+    valid = [results[b] for b in AGE_BRACKETS if results[b]["status"] == "ok"]
+    if not valid:
+        return None
 
-    for ds in datasets:
-        if gender not in all_results[ds]:
-            continue
-        r = all_results[ds][gender][year]
-        coef_matrix[ds] = r['coefs']
-        all_preds.extend(r['coefs'].index.tolist())
+    all_predictors = []
+    for result in valid:
+        all_predictors.extend(result["coefs"].index.tolist())
+    all_predictors = list(dict.fromkeys(all_predictors))
 
-    all_preds = list(dict.fromkeys(all_preds))
-    if not all_preds or not coef_matrix:
-        return
+    mat = pd.DataFrame(index=all_predictors, columns=[r["bracket"] for r in valid], dtype=float)
+    for result in valid:
+        for predictor, coef in result["coefs"].items():
+            mat.loc[predictor, result["bracket"]] = coef
 
-    mat = pd.DataFrame(index=all_preds, columns=list(coef_matrix.keys()))
-    for ds, coefs in coef_matrix.items():
-        for p in all_preds:
-            mat.loc[p, ds] = coefs.get(p, 0.0)
-    mat = mat.astype(float)
+    mat = mat.fillna(0.0)
     mat = mat[(mat != 0).any(axis=1)]
-    mat.index = [SHORT_NAMES.get(p, p) for p in mat.index]
-
     if mat.empty:
-        print("  Heatmap: no non-zero coefficients across datasets")
-        return
+        return None
 
-    fig, ax = plt.subplots(figsize=(max(8, len(mat.columns) * 1.6),
-                                     max(5, len(mat) * 0.45 + 1.5)))
-    fig.patch.set_facecolor('white')
-
+    mat.index = [SHORT_NAMES.get(idx, idx) for idx in mat.index]
     vmax = max(abs(mat.values.max()), abs(mat.values.min()), 0.5)
-    cmap = plt.cm.RdBu_r
-    im = ax.imshow(mat.values, cmap=cmap, aspect='auto', vmin=-vmax, vmax=vmax)
 
-    ax.set_xticks(range(len(mat.columns)))
-    ax.set_xticklabels(mat.columns, fontsize=10, fontweight='bold')
-    ax.set_yticks(range(len(mat)))
+    fig, ax = plt.subplots(
+        figsize=(max(8, 1.4 * len(mat.columns)), max(4, 0.45 * len(mat.index) + 2))
+    )
+    fig.patch.set_facecolor("white")
+    im = ax.imshow(mat.values, cmap=plt.cm.RdBu_r, aspect="auto", vmin=-vmax, vmax=vmax)
+
+    ax.set_xticks(np.arange(len(mat.columns)))
+    ax.set_xticklabels(mat.columns, rotation=30, ha="right", fontsize=9)
+    ax.set_yticks(np.arange(len(mat.index)))
     ax.set_yticklabels(mat.index, fontsize=9)
+    ax.set_title(
+        f"Age-wise coefficient heatmap | {dataset_name} | {gender}",
+        fontsize=12,
+        fontweight="bold",
+    )
 
-    for i in range(len(mat)):
+    for i in range(len(mat.index)):
         for j in range(len(mat.columns)):
             val = mat.iloc[i, j]
             if val != 0:
-                text_color = 'white' if abs(val) > vmax * 0.6 else '#333333'
-                ax.text(j, i, f'{val:+.2f}', ha='center', va='center',
-                        fontsize=8, color=text_color, fontweight='500')
+                color = "white" if abs(val) > vmax * 0.55 else "#333333"
+                ax.text(j, i, f"{val:+.2f}", ha="center", va="center", fontsize=7.5, color=color)
 
-    cbar = fig.colorbar(im, ax=ax, shrink=0.7, pad=0.02)
-    cbar.set_label('Standardised coefficient', fontsize=9)
-    ax.set_title(
-        f"LASSO coefficients across groups — {gender.upper()} CMPR ({bracket})\n"
-        f"Year: {year}  |  Blue = protective  |  Red = risk factor  |  "
-        f"White = zeroed by LASSO",
-        fontsize=10, fontweight='bold', pad=12
-    )
-    for i in range(len(mat) + 1):
-        ax.axhline(i - 0.5, color='white', linewidth=0.5)
-    for j in range(len(mat.columns) + 1):
-        ax.axvline(j - 0.5, color='white', linewidth=0.5)
+    cbar = fig.colorbar(im, ax=ax, shrink=0.8, pad=0.02)
+    cbar.set_label("Standardised coefficient", fontsize=9)
 
     plt.tight_layout()
-    fname = f'{OUT_DIR}lasso_heatmap_{year}_{gender}.png'
-    plt.savefig(fname, dpi=150, bbox_inches='tight', facecolor='white')
+    path = os.path.join(OUT_DIR, f"{dataset_name.lower()}_{gender}_heatmap_by_age.png")
+    plt.savefig(path, dpi=160, bbox_inches="tight", facecolor="white")
     plt.close()
-    print(f"  → Saved: {fname}")
-    return fname
+    print(f"  -> Saved {path}")
+    return path
 
 
-def plot_alpha_path(df_year, predictors, target, bracket='age_14_17',
-                    year_label='Year', dataset='SC'):
-    """
-    Regularisation path: shows how coefficients change as alpha increases.
-    Predictors that survive high alpha are the most robust.
-    """
-    from sklearn.linear_model import lasso_path
-
-    df = df_year[
-        (df_year['age_bracket'] == bracket) &
-        (df_year['state_name'] != 'INDIA')
-    ][predictors + [target]].dropna()
-
-    X = StandardScaler().fit_transform(df[predictors].values)
-    y = df[target].values
-
-    alphas, coefs, _ = lasso_path(X, y, alphas=np.logspace(-3, 2, 200),
-                                   max_iter=20000)
-
-    fig, ax = plt.subplots(figsize=(10, 5))
-    fig.patch.set_facecolor('white')
-
-    cmap_colors = plt.cm.tab20(np.linspace(0, 1, len(predictors)))
-    for i, (pred, color) in enumerate(zip(predictors, cmap_colors)):
-        if np.any(coefs[i] != 0):
-            ax.plot(np.log10(alphas), coefs[i], label=SHORT_NAMES.get(pred, pred),
-                    color=color, linewidth=1.5)
-
-    ax.axvline(0, color='#888', linewidth=0.5, linestyle=':')
-    ax.axhline(0, color='#888', linewidth=0.5)
-    ax.set_xlabel('log₁₀(α)  — higher = more regularisation', fontsize=9)
-    ax.set_ylabel('Standardised coefficient', fontsize=9)
-    ax.set_title(
-        f"Regularisation path — {target} ({bracket}) — {year_label}\n"
-        "Predictors that survive high alpha are most robust",
-        fontsize=10, fontweight='bold'
-    )
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.legend(fontsize=7.5, bbox_to_anchor=(1.01, 1), loc='upper left',
-              frameon=False, ncol=1)
-
-    plt.tight_layout()
-    fname = f'{OUT_DIR}lasso_path_{dataset}_{year_label}.png'
-    plt.savefig(fname, dpi=150, bbox_inches='tight', facecolor='white')
-    plt.close()
-    print(f"  → Saved: {fname}")
-    return fname
-
-
-# ── Summary table ──────────────────────────────────────────────────────────────
-
-def build_summary_table(all_results, bracket='age_14_17'):
-    """
-    DataFrame summarising model performance and selected predictors
-    for each dataset × gender × year.
-    """
+def plot_model_performance(results, dataset_name, gender):
     rows = []
-    for dataset, gender_dict in all_results.items():
-        for gender, year_dict in gender_dict.items():
-            for year, r in year_dict.items():
-                selected_names = [SHORT_NAMES.get(p, p) for p in r['selected'].index]
-                rows.append({
-                    'Dataset':             dataset,
-                    'Gender':              gender,
-                    'Year':                year,
-                    'Target':              r['target'],
-                    'Bracket':             r['bracket'],
-                    'N':                   r['n'],
-                    'Alpha':               round(r['alpha'], 4),
-                    'R2_train':            round(r['r2_train'], 3),
-                    'R2_cv':               round(r['r2_cv'], 3),
-                    'N_selected':          r['n_selected'],
-                    'Selected_predictors': ' | '.join(selected_names),
-                })
+    for bracket in AGE_BRACKETS:
+        result = results[bracket]
+        if result["status"] != "ok":
+            continue
+        rows.append({
+            "bracket": bracket,
+            "r2_train": result["r2_train"],
+            "r2_cv": result["r2_cv"],
+            "n_rows": result["n_rows"],
+            "n_selected": result["n_selected"],
+            "n_predictors_used": result["n_predictors_used"],
+        })
+
+    if not rows:
+        return None
+
+    perf = pd.DataFrame(rows)
+    x = np.arange(len(perf))
+
+    fig, axes = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
+    fig.patch.set_facecolor("white")
+
+    axes[0].plot(x, perf["r2_train"], marker="o", color="#cf5d3f", label="R2 train")
+    axes[0].plot(x, perf["r2_cv"], marker="o", color="#2f6da3", label="R2 CV")
+    axes[0].axhline(0, color="#999999", linewidth=0.8, linestyle="--")
+    axes[0].set_ylabel("Model fit", fontsize=10)
+    axes[0].legend(frameon=False, fontsize=9)
+    axes[0].spines["top"].set_visible(False)
+    axes[0].spines["right"].set_visible(False)
+
+    width = 0.25
+    axes[1].bar(x - width, perf["n_rows"], width=width, color="#4a7f52", label="Rows")
+    axes[1].bar(x, perf["n_predictors_used"], width=width, color="#9b7d2f", label="Predictors used")
+    axes[1].bar(x + width, perf["n_selected"], width=width, color="#7b5aa6", label="Selected")
+    axes[1].set_ylabel("Counts", fontsize=10)
+    axes[1].set_xticks(x)
+    axes[1].set_xticklabels(perf["bracket"], rotation=30, ha="right", fontsize=9)
+    axes[1].legend(frameon=False, fontsize=9)
+    axes[1].spines["top"].set_visible(False)
+    axes[1].spines["right"].set_visible(False)
+
+    fig.suptitle(
+        f"Age-wise model performance | {dataset_name} | {gender}",
+        fontsize=12,
+        fontweight="bold",
+    )
+    plt.tight_layout()
+    path = os.path.join(OUT_DIR, f"{dataset_name.lower()}_{gender}_model_performance.png")
+    plt.savefig(path, dpi=160, bbox_inches="tight", facecolor="white")
+    plt.close()
+    print(f"  -> Saved {path}")
+    return path
+
+
+def build_summary_table(all_results):
+    rows = []
+    for dataset_name, gender_dict in all_results.items():
+        for gender, results in gender_dict.items():
+            for bracket in AGE_BRACKETS:
+                result = results[bracket]
+                base = {
+                    "dataset": dataset_name,
+                    "gender": gender,
+                    "age_bracket": bracket,
+                    "target": result.get("target"),
+                    "status": result.get("status"),
+                    "reason": result.get("reason", ""),
+                    "n_rows": result.get("n_rows", np.nan),
+                }
+                if result["status"] != "ok":
+                    base.update({
+                        "alpha": np.nan,
+                        "r2_train": np.nan,
+                        "r2_cv": np.nan,
+                        "n_predictors_used": np.nan,
+                        "n_selected": np.nan,
+                        "used_predictors": "",
+                        "selected_predictors": "",
+                        "skipped_predictors": " | ".join(
+                            f"{SHORT_NAMES.get(col, col)} [{reason}]"
+                            for col, reason in result.get("skipped_predictors", [])
+                        ),
+                    })
+                else:
+                    base.update({
+                        "alpha": round(result["alpha"], 4),
+                        "r2_train": round(result["r2_train"], 3),
+                        "r2_cv": round(result["r2_cv"], 3),
+                        "n_predictors_used": result["n_predictors_used"],
+                        "n_selected": result["n_selected"],
+                        "used_predictors": " | ".join(
+                            SHORT_NAMES.get(col, col) for col in result["used_predictors"]
+                        ),
+                        "selected_predictors": " | ".join(
+                            f"{SHORT_NAMES.get(col, col)} ({coef:+.3f})"
+                            for col, coef in result["selected"].items()
+                        ),
+                        "skipped_predictors": " | ".join(
+                            f"{SHORT_NAMES.get(col, col)} [{reason}]"
+                            for col, reason in result["skipped_predictors"]
+                        ),
+                    })
+                rows.append(base)
     return pd.DataFrame(rows)
 
 
-# ── MAIN ───────────────────────────────────────────────────────────────────────
-
 def main():
-    print("\n" + "="*60)
-    print("  CMPR LASSO ANALYSIS — 2001 vs 2011")
-    print("="*60)
+    os.makedirs(OUT_DIR, exist_ok=True)
 
-    # ── Load SC and ST ──────────────────────────────────────────────────────
-    df_sc_2001    = pd.read_csv(SC_PATH_2001)
-    df_sc_2011    = pd.read_csv(SC_PATH_2011)
-    df_st_2001    = pd.read_csv(ST_PATH_2001)
-    df_st_2011    = pd.read_csv(ST_PATH_2011)
-    df_total_2001 = pd.read_csv(TOTAL_PATH_2001)
-    df_total_2011 = pd.read_csv(TOTAL_PATH_2011)
+    print("\n" + "=" * 72)
+    print("AGE-WISE CMPR LASSO ANALYSIS | NEW GENDER-WISE DATASETS")
+    print("=" * 72)
 
-    # ── Load religion files ─────────────────────────────────────────────────
-    # Both files now have CMPR columns — 2001 was updated by
-    # append_religion_cmpr_2001.py, 2011 had them originally.
-    df_rel_2001 = pd.read_csv(REL_PATH_2001)
-    df_rel_2011 = pd.read_csv(REL_PATH_2011)
-    print(f"\n  Religion 2001 CMPR columns: "
-          f"{[c for c in df_rel_2001.columns if c.startswith('CMPR_')]}")
-
-    BRACKET = 'age_14_17'
     all_results = {}
 
-    # ── SC ─────────────────────────────────────────────────────────────────
-    print("\n[1/6] Running SC models...")
-    all_results['SC'] = run_year_comparison(df_sc_2001, df_sc_2011,
-                                             dataset='SC', bracket=BRACKET)
-    plot_coefficient_comparison(all_results['SC'], dataset='SC', gender='female')
-    plot_change_summary(all_results['SC'], dataset='SC', gender='female')
-    plot_alpha_path(df_sc_2011, CONFIGS['SC']['predictors'],
-                    'CMPR_SC_female', BRACKET, year_label='2011', dataset='SC')
+    for dataset_name, cfg in DATASETS.items():
+        all_results[dataset_name] = {}
+        for gender in ["female", "male"]:
+            path = cfg[gender]
+            if not os.path.exists(path):
+                print(f"\nMissing file, skipping: {path}")
+                continue
 
-    # ── ST ─────────────────────────────────────────────────────────────────
-    print("\n[2/6] Running ST models...")
-    all_results['ST'] = run_year_comparison(df_st_2001, df_st_2011,
-                                             dataset='ST', bracket=BRACKET)
-    plot_coefficient_comparison(all_results['ST'], dataset='ST', gender='female')
-    plot_change_summary(all_results['ST'], dataset='ST', gender='female')
+            df = pd.read_csv(path)
+            all_results[dataset_name][gender] = run_agewise_models(df, dataset_name, gender)
+            plot_coefficients_by_bracket(all_results[dataset_name][gender], dataset_name, gender)
+            plot_agewise_heatmap(all_results[dataset_name][gender], dataset_name, gender)
+            plot_model_performance(all_results[dataset_name][gender], dataset_name, gender)
 
-    # ── Hindu ──────────────────────────────────────────────────────────────
-    print("\n[3/6] Running Hindu models...")
-    all_results['Hindu'] = run_year_comparison(df_rel_2001, df_rel_2011,
-                                                dataset='Hindu', bracket=BRACKET)
-    plot_coefficient_comparison(all_results['Hindu'], dataset='Hindu', gender='female')
-    plot_change_summary(all_results['Hindu'], dataset='Hindu', gender='female')
-
-    # ── Muslim ─────────────────────────────────────────────────────────────
-    print("\n[4/6] Running Muslim models...")
-    all_results['Muslim'] = run_year_comparison(df_rel_2001, df_rel_2011,
-                                                 dataset='Muslim', bracket=BRACKET)
-    plot_coefficient_comparison(all_results['Muslim'], dataset='Muslim', gender='female')
-    plot_change_summary(all_results['Muslim'], dataset='Muslim', gender='female')
-
-    # ── Christian ──────────────────────────────────────────────────────────
-    print("\n[5/6] Running Christian models...")
-    all_results['Christian'] = run_year_comparison(df_rel_2001, df_rel_2011,
-                                                    dataset='Christian', bracket=BRACKET)
-    plot_coefficient_comparison(all_results['Christian'], dataset='Christian', gender='female')
-    plot_change_summary(all_results['Christian'], dataset='Christian', gender='female')
-
-    # ── Total ──────────────────────────────────────────────────────────────
-    print("\n[6/6] Running Total population models...")
-    all_results['Total'] = run_year_comparison(df_total_2001, df_total_2011,
-                                                dataset='Total', bracket=BRACKET)
-    plot_coefficient_comparison(all_results['Total'], dataset='Total', gender='female')
-    plot_change_summary(all_results['Total'], dataset='Total', gender='female')
-    plot_alpha_path(df_total_2011, CONFIGS['Total']['predictors'],
-                    'CMPR_total_female', BRACKET, year_label='2011', dataset='Total')
-
-    # ── Cross-dataset heatmap ───────────────────────────────────────────────
-    print("\n[Heatmap] Building cross-dataset coefficient heatmap...")
-    plot_all_datasets_heatmap(all_results, year='2011', gender='female',
-                               bracket=BRACKET)
-
-    # ── Summary table ───────────────────────────────────────────────────────
-    print("\n[Summary table] Writing CSV...")
-    summary = build_summary_table(all_results, bracket=BRACKET)
-    summary_path = f'{OUT_DIR}lasso_summary_table.csv'
+    summary = build_summary_table(all_results)
+    summary_path = os.path.join(OUT_DIR, "lasso_agewise_summary.csv")
     summary.to_csv(summary_path, index=False)
-    print(f"  → Saved: {summary_path}")
+
+    print(f"\nSaved summary: {summary_path}")
     print("\n" + summary.to_string(index=False))
+    print("\n" + "=" * 72)
+    print(f"All outputs saved to {OUT_DIR}")
+    print("=" * 72)
 
-    print("\n" + "="*60)
-    print(f"  All outputs saved to {OUT_DIR}")
-    print("="*60)
 
+if __name__ == "__main__":
+    os.makedirs("regression_outputs", exist_ok=True)
 
-if __name__ == '__main__':
-    os.makedirs('regression_outputs', exist_ok=True)
+    log_path = os.path.join(
+        "regression_outputs",
+        f"lasso_agewise_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
+    )
 
-    log_path = f"regression_outputs/lasso_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
-
-    with open(log_path, "w") as f:
+    with open(log_path, "w") as handle:
         original_stdout = sys.stdout
-        sys.stdout = f  # redirect prints to file
+        sys.stdout = handle
         try:
             main()
         finally:
-            sys.stdout = original_stdout  # restore stdout
+            sys.stdout = original_stdout
 
     print(f"Log saved to: {log_path}")
