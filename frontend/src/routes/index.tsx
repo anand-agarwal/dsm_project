@@ -14,6 +14,7 @@ import {
   type IndexGroupKey,
   type Year,
 } from "@/data/cmprIndexes";
+import { canonicalStateName } from "@/data/states";
 import geojson from "@/data/india-states.geojson.json";
 
 export const Route = createFileRoute("/")({
@@ -109,9 +110,19 @@ function AtlasPage() {
 }
 
 function computeNationalAverage(year: Year, age: AgeBracket, indexKey: ReturnType<typeof buildIndexKey>): number {
-  const fc = geojson as unknown as { features: Array<{ properties: { NAME_1: string } }> };
-  const values = fc.features
-    .map((f) => cmprValue(f.properties.NAME_1, year, age, indexKey))
+  const fc = geojson as unknown as {
+    features: Array<{ properties: { NAME_1?: string; st_nm?: string; name?: string } }>;
+  };
+  const uniqueStates = Array.from(
+    new Set(
+      fc.features
+        .map((f) => f.properties.NAME_1 ?? f.properties.st_nm ?? f.properties.name)
+        .filter((name): name is string => Boolean(name))
+        .map(canonicalStateName),
+    ),
+  );
+  const values = uniqueStates
+    .map((stateName) => cmprValue(stateName, year, age, indexKey))
     .filter((v): v is number => v != null);
   if (!values.length) return 0;
   return Math.round((values.reduce((acc, cur) => acc + cur, 0) / values.length) * 10) / 10;

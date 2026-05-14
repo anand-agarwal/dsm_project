@@ -39,6 +39,17 @@ export const STATES: { name: string; code: string; region: "North" | "South" | "
 ];
 
 export const STATE_BY_NAME = new Map(STATES.map((s) => [s.name, s]));
+const STATE_NAME_ALIASES: Record<string, string> = {
+  "Andaman and Nicobar": "Andaman & Nicobar",
+  "Daman & Diu": "Dadra and Nagar Haveli and Daman and Diu",
+  "Jammu and Kashmir": "Jammu & Kashmir",
+  Orissa: "Odisha",
+  Telengana: "Andhra Pradesh",
+  Telangana: "Andhra Pradesh",
+  Uttaranchal: "Uttarakhand",
+};
+
+export const canonicalStateName = (name: string) => STATE_NAME_ALIASES[name] ?? name;
 export const stateSlug = (name: string) =>
   name.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 export const stateFromSlug = (slug: string) =>

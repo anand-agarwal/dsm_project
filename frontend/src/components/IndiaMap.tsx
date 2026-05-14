@@ -4,11 +4,21 @@ import { useNavigate } from "@tanstack/react-router";
 import geojson from "@/data/india-states.geojson.json";
 import { cmprValue, indexLabel, type Year, type AgeBracket, type CmprIndexKey } from "@/data/cmprIndexes";
 import { cmprColor, CMPR_BREAKS } from "@/lib/scales";
-import { stateSlug } from "@/data/states";
+import { canonicalStateName, stateSlug } from "@/data/states";
 
 type Feature = {
   type: "Feature";
-  properties: { NAME_1: string };
+  properties: {
+    NAME_1?: string;
+    st_nm?: string;
+    name?: string;
+  };
+  geometry: GeoJSON.Geometry;
+};
+
+type MapFeature = {
+  type: "Feature";
+  properties: { stateName: string };
   geometry: GeoJSON.Geometry;
 };
 
@@ -29,9 +39,13 @@ export function IndiaMap({
 
   const { features, pathFn } = useMemo(() => {
     const fc = geojson as unknown as { features: Feature[] };
-    const projection = geoMercator().fitSize([WIDTH, HEIGHT], fc as unknown as GeoJSON.FeatureCollection);
+    const features = mergeFeaturesByState(fc.features);
+    const projection = geoMercator().fitSize(
+      [WIDTH, HEIGHT],
+      { type: "FeatureCollection", features } as unknown as GeoJSON.FeatureCollection,
+    );
     const pathFn = geoPath(projection);
-    return { features: fc.features, pathFn };
+    return { features, pathFn };
   }, []);
 
   const hoverData = hover
@@ -46,7 +60,7 @@ export function IndiaMap({
         <g>
           {features.map((f) => {
             const d = pathFn(f as unknown as GeoJSON.Feature) ?? "";
-            const stateName = f.properties.NAME_1;
+            const stateName = f.properties.stateName;
             const v = cmprValue(stateName, year, age, indexKey);
             const fill = cmprColor(v);
             const isHover = hover?.name === stateName;
@@ -97,6 +111,51 @@ export function IndiaMap({
       <Legend metricLabel={indexLabel(indexKey)} />
     </div>
   );
+}
+
+function mergeFeaturesByState(features: Feature[]): MapFeature[] {
+  const grouped = new Map<string, GeoJSON.Geometry[]>();
+
+  for (const feature of features) {
+    const rawName = feature.properties.NAME_1 ?? feature.properties.st_nm ?? feature.properties.name;
+    if (!rawName) continue;
+    const stateName = canonicalStateName(rawName);
+    const geometries = grouped.get(stateName) ?? [];
+    geometries.push(feature.geometry);
+    grouped.set(stateName, geometries);
+  }
+
+  return Array.from(grouped.entries()).map(([stateName, geometries]) => ({
+    type: "Feature",
+    properties: { stateName },
+    geometry: combineGeometries(geometries),
+  }));
+}
+
+function combineGeometries(geometries: GeoJSON.Geometry[]): GeoJSON.Geometry {
+  const polygons: GeoJSON.Position[][][] = [];
+
+  for (const geometry of geometries) {
+    if (geometry.type === "Polygon") {
+      polygons.push(geometry.coordinates);
+      continue;
+    }
+    if (geometry.type === "MultiPolygon") {
+      polygons.push(...geometry.coordinates);
+    }
+  }
+
+  if (polygons.length === 1) {
+    return {
+      type: "Polygon",
+      coordinates: polygons[0],
+    };
+  }
+
+  return {
+    type: "MultiPolygon",
+    coordinates: polygons,
+  };
 }
 
 function Legend({ metricLabel }: { metricLabel: string }) {

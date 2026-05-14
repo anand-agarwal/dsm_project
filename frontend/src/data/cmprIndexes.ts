@@ -1,4 +1,5 @@
 import { CMPR_DATA_BY_YEAR, CMPR_INDEX_KEYS } from "@/data/cmprDataset";
+import { canonicalStateName } from "@/data/states";
 
 export type Year = 2001 | 2011;
 export type AgeBracket = "<10" | "10-13" | "14-17" | "18-21";
@@ -33,12 +34,6 @@ export const INDEX_GROUPS = [
 export type IndexGroupKey = (typeof INDEX_GROUPS)[number]["key"];
 export type Gender = "female" | "male";
 export const GENDERS: Gender[] = ["female", "male"];
-const GEOJSON_TO_DATASET_STATE: Record<string, string> = {
-  "Jammu and Kashmir": "Jammu & Kashmir",
-  Orissa: "Odisha",
-  Uttaranchal: "Uttarakhand",
-};
-
 export function buildIndexKey(group: IndexGroupKey, gender: Gender): CmprIndexKey {
   if (group === "sc") return `CMPR_SC_${gender}` as CmprIndexKey;
   if (group === "st") return `CMPR_ST_${gender}` as CmprIndexKey;
@@ -51,7 +46,7 @@ export function cmprValue(
   age: AgeBracket,
   indexKey: CmprIndexKey,
 ): number | null {
-  const normalizedState = GEOJSON_TO_DATASET_STATE[stateName] ?? stateName;
+  const normalizedState = canonicalStateName(stateName);
   const yearData = CMPR_DATA_BY_YEAR[String(year) as keyof typeof CMPR_DATA_BY_YEAR];
   const stateData = yearData?.[normalizedState as keyof typeof yearData];
   const ageData = stateData?.[age as keyof typeof stateData];
