@@ -3,9 +3,9 @@
   "buildCommand": "npm run build --prefix frontend",
   "outputDirectory": "frontend/dist",
   "functions": {
-    "api/chat.cjs": {
+    "api/chat.js": {
       "maxDuration": 60,
-      "includeFiles": "api/_handler.cjs"
+      "includeFiles": "api/_handler.js"
     }
   },
   "rewrites": [

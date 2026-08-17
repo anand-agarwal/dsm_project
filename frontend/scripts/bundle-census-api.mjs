@@ -17,8 +17,6 @@ const common = {
   format: "cjs",
   target: "node20",
   logLevel: "info",
-  // Keep Vercel helpers out of the bundle; they use require() on Node builtins.
-  external: ["@vercel/node", "@vercel/oidc"],
   define: {
     "import.meta.env": "process.env",
   },
@@ -29,11 +27,10 @@ await mkdir(path.join(frontendRoot, "api"), { recursive: true });
 
 await esbuild.build({
   ...common,
-  outfile: path.join(repoRoot, "api/_handler.cjs"),
+  outfile: path.join(repoRoot, "api/_handler.js"),
 });
 
-// .cjs so Node treats this as CommonJS even though frontend/package.json is "type": "module".
 await esbuild.build({
   ...common,
-  outfile: path.join(frontendRoot, "api/_handler.cjs"),
+  outfile: path.join(frontendRoot, "api/_handler.js"),
 });
