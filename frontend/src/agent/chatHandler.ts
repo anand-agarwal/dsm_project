@@ -1,0 +1,146 @@
+import { convertToModelMessages, stepCountIs, streamText, type UIMessage } from "ai";
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import type { IncomingMessage, ServerResponse } from "node:http";
+import { censusAgentTools } from "./censusTools";
+
+const SYSTEM = `You are Bachpan's Census of India data agent (2001 and 2011 only).
+
+Rules:
+- For any number (literacy, currently married share, population, school attendance), you MUST call run_census_query. Never invent a rate from memory.
+- If you are unsure which table or columns to use, call lookup_schema first.
+- SC and ST are separate Postgres tables (raw_c_08_sc, not a caste column on raw_c_08).
+- Literacy is C-08: literate count / total count (e.g. females_10 / females_4 for girls). There is no literacy column.
+- Currently-married share is C-02 (current age). Atlas CMPR for the total population uses age-at-marriage tables (C-04+); do not call C-02 currently-married the same as atlas CMPR unless the question is about SC/ST currently-married prevalence.
+- Pass state as a plain name only (Rajasthan, Odisha). Never pass "State - RAJASTHAN" or a full sentence. The tool already matches Census labels like "State - RAJASTHAN (08)".
+- Omit ageBand unless the user named an age. Default is All ages. Do not put ST/SC/female/married into ageBand.
+- When you report a rate, quote the percentage AND the numerator/denominator AND year, area (Total/Rural/Urban), sex, social group, and age band.
+- If a tool returns ok:false or 0 rows, quote the tool error/hint. Do not invent causes such as a missing table or a "State - NAME" format mismatch.
+- For laws, schemes, or background, call web_search. Cite sources as markdown links like [UNICEF](https://www.unicef.org/...), never paste a raw URL. Do not treat snippets as Census rates.
+- web_search uses Firecrawl when FIRECRAWL_API_KEY is set, then DuckDuckGo, then OpenAlex. If it still fails, say the backends failed — do not claim that no research exists.
+- Refuse questions that are not about these Census tables, child-marriage measurement, or related law and policy.`;
+
+function env(name: string): string | undefined {
+  return process.env[name]?.trim() || undefined;
+}
+
+export function getQwenModel() {
+  const apiKey = env("HF_TOKEN") ?? env("HUGGINGFACE_API_KEY");
+  if (!apiKey) {
+    throw new Error("Missing HF_TOKEN. Add a Hugging Face token to frontend/.env.local (no VITE_ prefix).");
+  }
+  const provider = createOpenAICompatible({
+    name: "huggingface",
+    apiKey,
+    baseURL: env("HF_BASE_URL") ?? "https://router.huggingface.co/v1",
+  });
+  const modelId = env("QWEN_MODEL") ?? "Qwen/Qwen3-8B";
+  return provider.chatModel(modelId);
+}
+
+export async function handleCensusChat(request: Request): Promise<Response> {
+  if (request.method === "OPTIONS") {
+    return new Response(null, { status: 204 });
+  }
+  if (request.method !== "POST") {
+    return Response.json({ error: "Method not allowed" }, { status: 405 });
+  }
+
+  let model;
+  try {
+    model = getQwenModel();
+  } catch (err) {
+    return Response.json(
+      { error: err instanceof Error ? err.message : "Model config error" },
+      { status: 500 },
+    );
+  }
+
+  let body: { messages?: UIMessage[] };
+  try {
+    body = (await request.json()) as { messages?: UIMessage[] };
+  } catch {
+    return Response.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  const uiMessages = Array.isArray(body.messages) ? body.messages : [];
+  if (uiMessages.length === 0) {
+    return Response.json({ error: "messages is required" }, { status: 400 });
+  }
+
+  const modelMessages = await convertToModelMessages(uiMessages, {
+    tools: censusAgentTools,
+    ignoreIncompleteToolCalls: true,
+  });
+
+  const result = streamText({
+    model,
+    system: SYSTEM,
+    messages: modelMessages,
+    tools: censusAgentTools,
+    stopWhen: stepCountIs(8),
+    temperature: 0.2,
+    maxRetries: 1,
+  });
+
+  return result.toUIMessageStreamResponse();
+}
+
+export async function nodeRequestToWeb(
+  req: IncomingMessage & { body?: unknown },
+): Promise<Request> {
+  const host = req.headers.host ?? "127.0.0.1";
+  const url = `http://${host}${req.url ?? "/api/chat"}`;
+  const headers = new Headers();
+  for (const [key, value] of Object.entries(req.headers)) {
+    if (value === undefined) continue;
+    headers.set(key, Array.isArray(value) ? value.join(", ") : value);
+  }
+  const method = req.method ?? "GET";
+  if (method === "GET" || method === "HEAD") {
+    return new Request(url, { method, headers });
+  }
+  // Vercel may already parse JSON onto req.body before the stream is readable.
+  if (req.body !== undefined && req.body !== null && !Buffer.isBuffer(req.body)) {
+    const body = typeof req.body === "string" ? req.body : JSON.stringify(req.body);
+    return new Request(url, { method, headers, body });
+  }
+  const chunks: Buffer[] = [];
+  for await (const chunk of req) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+  return new Request(url, {
+    method,
+    headers,
+    body: Buffer.concat(chunks),
+  });
+}
+
+export async function writeWebResponseToNode(response: Response, res: ServerResponse) {
+  res.statusCode = response.status;
+  response.headers.forEach((value, key) => {
+    res.setHeader(key, value);
+  });
+  if (!response.body) {
+    res.end();
+    return;
+  }
+  const reader = response.body.getReader();
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      res.write(Buffer.from(value));
+    }
+  } finally {
+    res.end();
+  }
+}
+
+export async function handleCensusChatNode(
+  req: IncomingMessage & { body?: unknown },
+  res: ServerResponse,
+) {
+  const request = await nodeRequestToWeb(req);
+  const response = await handleCensusChat(request);
+  await writeWebResponseToNode(response, res);
+}

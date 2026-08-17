@@ -1,9 +1,15 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
+  "installCommand": "npm install --prefix frontend",
+  "buildCommand": "npm run build --prefix frontend",
+  "outputDirectory": "frontend/dist",
+  "functions": {
+    "api/chat.ts": {
+      "maxDuration": 60
+    }
+  },
   "rewrites": [
     {
-      "source": "/((?!.*\\.).*)",
+      "source": "/((?!api(?:/|$)|.*\\.).*)",
       "destination": "/index.html"
     }
   ]
