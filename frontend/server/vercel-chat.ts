@@ -5,7 +5,7 @@ export const config = {
   maxDuration: 60,
 };
 
-/** Bundled by `scripts/bundle-census-api.mjs` into `/api/chat.js` for Vercel. */
+/** Bundled by `scripts/bundle-census-api.mjs` into `api/_handler.cjs` for Vercel. */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     await handleCensusChatNode(req, res);

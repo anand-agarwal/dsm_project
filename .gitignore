@@ -6,5 +6,7 @@ __pycache__
 census_2001_sorted/
 .DS_Store
 .vercel
+/api/_handler.cjs
 /api/_handler.js
+frontend/api/_handler.cjs
 frontend/api/_handler.js

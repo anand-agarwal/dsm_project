@@ -14,8 +14,11 @@ const common = {
   entryPoints: [entry],
   bundle: true,
   platform: "node",
+  format: "cjs",
   target: "node20",
   logLevel: "info",
+  // Keep Vercel helpers out of the bundle; they use require() on Node builtins.
+  external: ["@vercel/node", "@vercel/oidc"],
   define: {
     "import.meta.env": "process.env",
   },
@@ -24,16 +27,13 @@ const common = {
 await mkdir(path.join(repoRoot, "api"), { recursive: true });
 await mkdir(path.join(frontendRoot, "api"), { recursive: true });
 
-// Imported by api/chat.ts. CJS because the repo root has no "type": "module".
 await esbuild.build({
   ...common,
-  format: "cjs",
-  outfile: path.join(repoRoot, "api/_handler.js"),
+  outfile: path.join(repoRoot, "api/_handler.cjs"),
 });
 
-// Imported by frontend/api/chat.ts. ESM to match frontend/package.json.
+// .cjs so Node treats this as CommonJS even though frontend/package.json is "type": "module".
 await esbuild.build({
   ...common,
-  format: "esm",
-  outfile: path.join(frontendRoot, "api/_handler.js"),
+  outfile: path.join(frontendRoot, "api/_handler.cjs"),
 });
