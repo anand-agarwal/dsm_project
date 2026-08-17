@@ -7,4 +7,6 @@ census_2001_sorted/
 .DS_Store
 .vercel
 /api/_handler.js
+/api/_handler.cjs
 frontend/api/_handler.js
+frontend/api/_handler.cjs

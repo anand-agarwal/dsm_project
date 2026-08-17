@@ -1,8 +1,8 @@
 {
   "functions": {
-    "api/chat.js": {
+    "api/chat.cjs": {
       "maxDuration": 60,
-      "includeFiles": "api/_handler.js"
+      "includeFiles": "api/_handler.cjs"
     }
   },
   "rewrites": [
