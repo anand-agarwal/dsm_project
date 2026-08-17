@@ -1,12 +1,15 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type { IncomingMessage, ServerResponse } from "node:http";
 import { handleCensusChatNode } from "../src/agent/chatHandler";
 
 export const config = {
   maxDuration: 60,
 };
 
-/** Bundled by `scripts/bundle-census-api.mjs` into `api/_handler.cjs` for Vercel. */
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+/** Bundled by `scripts/bundle-census-api.mjs` into `api/_handler.js` for Vercel. */
+export default async function handler(
+  req: IncomingMessage & { body?: unknown },
+  res: ServerResponse,
+) {
   try {
     await handleCensusChatNode(req, res);
   } catch (err: unknown) {
