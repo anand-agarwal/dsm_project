@@ -146,6 +146,7 @@ function ExplorePage() {
           <h1 className="font-display text-5xl tracking-tight mt-1">Raw tables</h1>
           <p className="mt-3 text-subtle max-w-prose">
             The atlas is built on these underlying tables. Filter and export any slice.
+            Use Ask in the header to query them in natural language.
           </p>
         </div>
       </section>

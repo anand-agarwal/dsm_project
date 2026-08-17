@@ -1,0 +1,209 @@
+{
+  "version": 1,
+  "searchBackend": "duckduckgo-search",
+  "notes": [
+    "Do not use the Wikipedia API or wikipedia.org results.",
+    "Issue one DuckDuckGo query, then keep hits whose host matches allowedHosts (suffix match).",
+    "Optionally append a site: clause for a single domain when the question is clearly legal vs statistical vs UN.",
+    "Census numbers still come from run_census_query, not from these pages."
+  ],
+  "deniedHosts": [
+    "wikipedia.org",
+    "m.wikipedia.org",
+    "wikiwand.com",
+    "wikimedia.org",
+    "quora.com",
+    "reddit.com",
+    "medium.com",
+    "facebook.com",
+    "x.com",
+    "twitter.com",
+    "youtube.com"
+  ],
+  "sources": [
+    {
+      "id": "census-india",
+      "host": "censusindia.gov.in",
+      "org": "Office of the Registrar General & Census Commissioner, India",
+      "bucket": "official-statistics",
+      "useFor": ["Census of India methodology", "C-series table notes", "literacy definitions", "2011/2001 publications"],
+      "alsoHosts": ["census.gov.in"]
+    },
+    {
+      "id": "mospi",
+      "host": "mospi.gov.in",
+      "org": "Ministry of Statistics and Programme Implementation",
+      "bucket": "official-statistics",
+      "useFor": ["Official statistics standards", "NSS / MoSPI publications that sit beside Census"]
+    },
+    {
+      "id": "data-gov-in",
+      "host": "data.gov.in",
+      "org": "Open Government Data, India",
+      "bucket": "official-statistics",
+      "useFor": ["Catalogued government datasets"]
+    },
+    {
+      "id": "iips-nfhs",
+      "host": "rchiips.org",
+      "org": "International Institute for Population Sciences — NFHS / DHS-style surveys",
+      "bucket": "official-statistics",
+      "useFor": ["NFHS-4 / NFHS-5 women married before 18", "survey questionnaires", "state fact sheets"],
+      "alsoHosts": ["iipsindia.ac.in", "dhsprogram.com"]
+    },
+    {
+      "id": "niti",
+      "host": "niti.gov.in",
+      "org": "NITI Aayog",
+      "bucket": "official-policy",
+      "useFor": ["SDG India Index", "NITI notes on child marriage / girls' education"]
+    },
+    {
+      "id": "mwcd",
+      "host": "wcd.gov.in",
+      "org": "Ministry of Women and Child Development",
+      "bucket": "official-policy",
+      "useFor": ["National strategy and schemes on child marriage", "Beti Bachao Beti Padhao", "MWCD annual reports"],
+      "alsoHosts": ["wcd.nic.in"]
+    },
+    {
+      "id": "ncpcr",
+      "host": "ncpcr.gov.in",
+      "org": "National Commission for Protection of Child Rights",
+      "bucket": "official-policy",
+      "useFor": ["Child rights monitoring", "NCPCR reports on child marriage"]
+    },
+    {
+      "id": "education-gov",
+      "host": "education.gov.in",
+      "org": "Ministry of Education",
+      "bucket": "official-policy",
+      "useFor": ["Sarva Shiksha Abhiyan / Samagra Shiksha", "UDISE", "schooling policy that the atlas treats as a correlate"]
+    },
+    {
+      "id": "india-code",
+      "host": "indiacode.nic.in",
+      "org": "India Code",
+      "bucket": "law",
+      "useFor": ["Prohibition of Child Marriage Act 2006 (PCMA)", "Child Marriage Restraint Act 1929", "POCSO", "JJ Act", "Hindu Marriage Act age clauses"]
+    },
+    {
+      "id": "legislative",
+      "host": "legislative.gov.in",
+      "org": "Legislative Department, Ministry of Law and Justice",
+      "bucket": "law",
+      "useFor": ["Official Act texts and amendments"]
+    },
+    {
+      "id": "india-gov",
+      "host": "india.gov.in",
+      "org": "National Portal of India",
+      "bucket": "law",
+      "useFor": ["Plain-language scheme and Act summaries"]
+    },
+    {
+      "id": "prs",
+      "host": "prsindia.org",
+      "org": "PRS Legislative Research",
+      "bucket": "law",
+      "useFor": ["Bill trackers", "PCMA explainers", "parliamentary questions on child marriage"]
+    },
+    {
+      "id": "indian-kanoon",
+      "host": "indiankanoon.org",
+      "org": "Indian Kanoon",
+      "bucket": "law",
+      "useFor": ["Supreme Court / High Court judgments on PCMA, age of marriage, Independent Thought"],
+      "caveat": "Useful for case law; snippets are incomplete. Prefer citing the case name and year, not a scraped holding."
+    },
+    {
+      "id": "nalsa",
+      "host": "nalsa.gov.in",
+      "org": "National Legal Services Authority",
+      "bucket": "law",
+      "useFor": ["Legal aid architecture around child marriage"]
+    },
+    {
+      "id": "unicef",
+      "host": "unicef.org",
+      "org": "UNICEF",
+      "bucket": "un",
+      "useFor": ["Global and India child marriage prevalence (usually DHS/MICS, not Census C-02)", "programmatic architecture", "child protection frameworks"],
+      "alsoHosts": ["data.unicef.org"]
+    },
+    {
+      "id": "unfpa",
+      "host": "unfpa.org",
+      "org": "UNFPA",
+      "bucket": "un",
+      "useFor": ["Child marriage and UNFPA-UNICEF Global Programme", "NFHS-5 insight notes"],
+      "alsoHosts": ["india.unfpa.org"]
+    },
+    {
+      "id": "who",
+      "host": "who.int",
+      "org": "World Health Organization",
+      "bucket": "un",
+      "useFor": ["Health consequences of child marriage", "WHO definitions"]
+    },
+    {
+      "id": "ohchr",
+      "host": "ohchr.org",
+      "org": "OHCHR",
+      "bucket": "un",
+      "useFor": ["CRC", "CEDAW", "special rapporteur reports on child and forced marriage"]
+    },
+    {
+      "id": "world-bank",
+      "host": "worldbank.org",
+      "org": "World Bank",
+      "bucket": "un",
+      "useFor": ["Economic correlates", "WDI series already cited in the Bachpan blog"],
+      "alsoHosts": ["data.worldbank.org"]
+    },
+    {
+      "id": "girls-not-brides",
+      "host": "girlsnotbrides.org",
+      "org": "Girls Not Brides",
+      "bucket": "research-ngo",
+      "useFor": ["Theory of change / 'architecture' of child marriage as a field", "India country page", "evidence reviews"]
+    },
+    {
+      "id": "popcouncil",
+      "host": "popcouncil.org",
+      "org": "Population Council",
+      "bucket": "research-ngo",
+      "useFor": ["India adolescent and marriage research (e.g. UDAYA)"]
+    },
+    {
+      "id": "icrw",
+      "host": "icrw.org",
+      "org": "International Center for Research on Women",
+      "bucket": "research-ngo",
+      "useFor": ["Evaluations of child-marriage programmes in India"]
+    },
+    {
+      "id": "ncbi",
+      "host": "ncbi.nlm.nih.gov",
+      "org": "PubMed / PMC",
+      "bucket": "research-ngo",
+      "useFor": ["Peer-reviewed papers on child marriage in India"],
+      "alsoHosts": ["pubmed.ncbi.nlm.nih.gov"]
+    },
+    {
+      "id": "doi",
+      "host": "doi.org",
+      "org": "DOI resolver",
+      "bucket": "research-ngo",
+      "useFor": ["Canonical paper links (Bachpan already cites doi.org/10.3390/ijerph19084567)"]
+    },
+    {
+      "id": "mdpi-ijerph",
+      "host": "mdpi.com",
+      "org": "MDPI (open access; used in the Bachpan bibliography)",
+      "bucket": "research-ngo",
+      "useFor": ["The Douglass et al. IJERPH paper and similar OA articles"],
+      "caveat": "Allow the host but prefer pubmed/doi when both appear."
+    }
+  ]
+}
