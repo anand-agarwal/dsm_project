@@ -1,11 +1,5 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { handleCensusChatNode } from "../src/agent/chatHandler";
-
-export const config = {
-  maxDuration: 60,
-};
-
-/** Vercel Node serverless entry for POST /api/chat (AI SDK UI message stream). */
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  await handleCensusChatNode(req, res);
-}
+/**
+ * Vercel entry when the project Root Directory is `frontend`.
+ * Implementation is bundled into ./_handler.js during `npm run build`.
+ */
+export { default, config } from "./_handler.js";
