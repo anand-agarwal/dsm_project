@@ -1,13 +1,31 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { ArrowUp } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { ArrowUp, ChevronDown } from "lucide-react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, isTextUIPart, isToolUIPart, type UIMessage } from "ai";
 import { AGENT_NAME_HI } from "@/agent/identity";
+import { DEFAULT_GROQ_MODEL, GROQ_CHAT_MODELS, isGroqChatModelId } from "@/agent/groqModels";
+import { ChatMarkdown } from "@/components/ChatMarkdown";
 import { TathyaMark } from "@/components/TathyaMark";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { messagesSignature } from "@/lib/tathyaThreads";
-import { matchResearchSource } from "@/agent/researchSources";
 
-const chatTransport = new DefaultChatTransport({ api: "/api/chat" });
+const MODEL_STORAGE_KEY = "tathya.groqModel";
+
+function storedGroqModel() {
+  try {
+    const saved = localStorage.getItem(MODEL_STORAGE_KEY);
+    if (saved && isGroqChatModelId(saved)) return saved;
+  } catch {
+    /* ignore */
+  }
+  return DEFAULT_GROQ_MODEL;
+}
 
 function textOf(message: UIMessage): string {
   return message.parts
@@ -16,61 +34,6 @@ function textOf(message: UIMessage): string {
     .join("")
     .replace(/^\s+/, "")
     .replace(/\s+$/, "");
-}
-
-function citationLabel(url: string, markdownLabel?: string): string {
-  const known = matchResearchSource(url);
-  if (known?.org) return known.org;
-  const label = markdownLabel?.trim() ?? "";
-  if (label && !/^https?:\/\//i.test(label) && label.length <= 80) return label;
-  try {
-    return new URL(url).hostname.replace(/^www\./, "");
-  } catch {
-    return label || "Source";
-  }
-}
-
-function tidyUrl(raw: string): string {
-  return raw.replace(/[).,;:]+$/g, "");
-}
-
-function CitationLink({ href, label }: { href: string; label?: string }) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="font-semibold text-edu-700 underline decoration-edu-300 underline-offset-2 hover:text-edu-900"
-    >
-      {citationLabel(href, label)}
-    </a>
-  );
-}
-
-function renderMessageText(text: string): ReactNode[] {
-  const nodes: ReactNode[] = [];
-  const pattern =
-    /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)|\*\*([^*]+)\*\*|(https?:\/\/[^\s<>\]]+)/g;
-  let last = 0;
-  let key = 0;
-  for (const match of text.matchAll(pattern)) {
-    const start = match.index ?? 0;
-    if (start > last) nodes.push(text.slice(last, start));
-    if (match[1] && match[2]) {
-      nodes.push(<CitationLink key={key++} href={tidyUrl(match[2])} label={match[1]} />);
-    } else if (match[3]) {
-      nodes.push(
-        <strong key={key++} className="font-semibold text-ink">
-          {match[3]}
-        </strong>,
-      );
-    } else if (match[4]) {
-      nodes.push(<CitationLink key={key++} href={tidyUrl(match[4])} />);
-    }
-    last = start + match[0].length;
-  }
-  if (last < text.length) nodes.push(text.slice(last));
-  return nodes;
 }
 
 function toolPills(message: UIMessage): Array<{ label: string; tone: "busy" | "done" | "error" }> {
@@ -99,10 +62,26 @@ export function CensusChat({
   layout = "drawer",
 }: CensusChatProps) {
   const [draft, setDraft] = useState("");
+  const [modelId, setModelId] = useState(DEFAULT_GROQ_MODEL);
+  const modelIdRef = useRef(modelId);
+  modelIdRef.current = modelId;
   const primed = useRef(initialMessages);
   const persist = useRef(onMessagesChange);
   persist.current = onMessagesChange;
   const lastSaved = useRef(messagesSignature(primed.current ?? []));
+
+  useEffect(() => {
+    setModelId(storedGroqModel());
+  }, []);
+
+  const chatTransport = useMemo(
+    () =>
+      new DefaultChatTransport({
+        api: "/api/chat",
+        body: () => ({ model: modelIdRef.current }),
+      }),
+    [],
+  );
 
   const { messages, sendMessage, status, error, stop } = useChat({
     id: chatId,
@@ -110,6 +89,17 @@ export function CensusChat({
     transport: chatTransport,
   });
   const busy = status === "submitted" || status === "streaming";
+  const selectedModel = GROQ_CHAT_MODELS.find((m) => m.id === modelId) ?? GROQ_CHAT_MODELS[0];
+
+  const chooseModel = (id: string) => {
+    if (!isGroqChatModelId(id)) return;
+    setModelId(id);
+    try {
+      localStorage.setItem(MODEL_STORAGE_KEY, id);
+    } catch {
+      /* ignore */
+    }
+  };
 
   useEffect(() => {
     if (!persist.current || busy || messages.length === 0) return;
@@ -209,15 +199,15 @@ export function CensusChat({
                   </p>
                 )}
                 {text ? (
-                  <div
-                    className={
-                      mine
-                        ? "rounded-2xl rounded-br-md bg-ink text-paper px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-wrap"
-                        : "rounded-2xl rounded-bl-md bg-white text-ink px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-wrap shadow-[0_8px_24px_oklch(0.35_0.03_50_/_0.07)]"
-                    }
-                  >
-                    {renderMessageText(text)}
-                  </div>
+                  mine ? (
+                    <div className="rounded-2xl rounded-br-md bg-ink text-paper px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-wrap">
+                      {text}
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl rounded-bl-md bg-white text-ink px-3.5 py-2.5 shadow-[0_8px_24px_oklch(0.35_0.03_50_/_0.07)]">
+                      <ChatMarkdown text={text} />
+                    </div>
+                  )
                 ) : thinking ? (
                   <div className="rounded-2xl rounded-bl-md bg-white px-3.5 py-2.5 text-sm text-subtle shadow-[0_8px_24px_oklch(0.35_0.03_50_/_0.07)]">
                     Looking that up…
@@ -238,8 +228,8 @@ export function CensusChat({
         {error && (
           <div className={`census-chat-card px-5 py-4 text-sm text-cmpr-700 ${col}`}>
             {error.message}
-            {/HF_TOKEN|Hugging Face/i.test(error.message)
-              ? " Add HF_TOKEN to frontend/.env.local (server-only) and restart Vite."
+            {/GROQ_API_KEY/i.test(error.message)
+              ? " Add GROQ_API_KEY to frontend/.env.local (server-only) and restart Vite."
               : null}
           </div>
         )}
@@ -247,11 +237,44 @@ export function CensusChat({
 
       <form onSubmit={onSubmit} className={`px-5 pb-5 pt-1 ${page ? "px-6 md:px-10" : ""}`}>
         <div className={`census-chat-card flex items-end gap-2 px-3 py-2 ${col}`}>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                disabled={busy}
+                aria-label="Choose model"
+                className="mb-0.5 flex max-w-[42%] shrink-0 items-center gap-1 rounded-full bg-paper px-2.5 py-1.5 text-left text-[11px] font-medium text-ink hover:bg-edu-50 disabled:opacity-50"
+              >
+                <span className="truncate">{selectedModel.label}</span>
+                <ChevronDown className="h-3.5 w-3.5 shrink-0 text-subtle" strokeWidth={2} />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="start"
+              side="top"
+              className="w-[min(20rem,calc(100vw-3rem))] rounded-xl border-0 p-1 shadow-[0_8px_24px_oklch(0.35_0.03_50_/_0.12)]"
+            >
+              <DropdownMenuRadioGroup value={modelId} onValueChange={chooseModel}>
+                {GROQ_CHAT_MODELS.map((m) => (
+                  <DropdownMenuRadioItem
+                    key={m.id}
+                    value={m.id}
+                    className="items-start rounded-lg py-2"
+                  >
+                    <span className="flex min-w-0 flex-col gap-0.5">
+                      <span className="text-sm font-medium text-ink">{m.label}</span>
+                      <span className="text-[11px] leading-snug text-subtle">{m.hint}</span>
+                    </span>
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <input
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             placeholder="Ask about India - Census tables or the latest news…"
-            className="flex-1 bg-transparent px-2 py-2 text-sm text-ink placeholder:text-subtle outline-none"
+            className="min-w-0 flex-1 bg-transparent px-1 py-2 text-sm text-ink placeholder:text-subtle outline-none"
             disabled={busy}
           />
           {busy ? (

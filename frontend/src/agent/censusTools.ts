@@ -31,7 +31,7 @@ export const censusAgentTools = {
         .string()
         .optional()
         .describe("Catalog id from lookup_schema, e.g. c08_sc. Optional if metric + socialGroup are set."),
-      year: z.union([z.literal(2001), z.literal(2011), z.literal("2001"), z.literal("2011")]),
+      year: z.enum(["2001", "2011"]).describe("Census year. Use 2001 or 2011 only."),
       state: z
         .string()
         .min(1)
