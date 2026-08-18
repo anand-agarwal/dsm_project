@@ -4,7 +4,7 @@ import { SiteLayout } from "@/components/SiteLayout";
 export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
-      { title: "About — Bachpan" },
+      { title: "About - Bachpan" },
       { name: "description", content: "How this atlas is built, the indicators it uses, and what the numbers mean." },
     ],
   }),
@@ -20,17 +20,17 @@ function About() {
         <p className="mt-6 text-lg leading-relaxed dropcap">
           Bachpan is a reading of India's 2001 and 2011 decennial censuses, focused on a single
           question: how often, and where, do Indian children become spouses? The atlas threads child
-          marriage through literacy, dropout, work, and social identity — the structural variables that
+          marriage through literacy, dropout, work, and social identity - the structural variables that
           shape it.
         </p>
 
         <h2 className="font-display text-2xl mt-10">What's measured</h2>
         <ul className="mt-3 space-y-2 text-foreground/85">
-          <li><strong>CMPR</strong> — the share of an age cohort reported "ever married" in C-02 / C-03.</li>
-          <li><strong>Education</strong> — literacy and educational attainment from C-08 / C-09.</li>
-          <li><strong>Schooling</strong> — attendance and child-labour from C-12.</li>
-          <li><strong>Worker category</strong> — economic activity by marriage status from C-07.</li>
-          <li><strong>Social splits</strong> — SC, ST, and religion from C-02 / C-03 / C-05.</li>
+          <li><strong>CMPR</strong> - the share of an age cohort reported "ever married" in C-02 / C-03.</li>
+          <li><strong>Education</strong> - literacy and educational attainment from C-08 / C-09.</li>
+          <li><strong>Schooling</strong> - attendance and child-labour from C-12.</li>
+          <li><strong>Worker category</strong> - economic activity by marriage status from C-07.</li>
+          <li><strong>Social splits</strong> - SC, ST, and religion from C-02 / C-03 / C-05.</li>
         </ul>
 
         <div className="mt-10 flex gap-4">

@@ -46,7 +46,7 @@
     {
       "id": "iips-nfhs",
       "host": "rchiips.org",
-      "org": "International Institute for Population Sciences — NFHS / DHS-style surveys",
+      "org": "International Institute for Population Sciences - NFHS / DHS-style surveys",
       "bucket": "official-statistics",
       "useFor": ["NFHS-4 / NFHS-5 women married before 18", "survey questionnaires", "state fact sheets"],
       "alsoHosts": ["iipsindia.ac.in", "dhsprogram.com"]

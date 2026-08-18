@@ -1,7 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, beforeEach } from "vitest";
 import { handleCensusChat } from "./chatHandler";
+import { checkChatRateLimit, resetChatRateLimit } from "./chatRateLimit";
 
 describe("handleCensusChat", () => {
+  beforeEach(() => resetChatRateLimit());
   it("rejects non-POST", async () => {
     const res = await handleCensusChat(new Request("http://localhost/api/chat", { method: "GET" }));
     expect(res.status).toBe(405);
@@ -41,5 +43,20 @@ describe("handleCensusChat", () => {
       }),
     );
     expect(res.status).toBe(400);
+  });
+
+  it("returns 429 when the same network sends too many POSTs", async () => {
+    process.env.HF_TOKEN = process.env.HF_TOKEN || "test-token";
+    for (let i = 0; i < 20; i++) checkChatRateLimit("203.0.113.8");
+    const res = await handleCensusChat(
+      new Request("http://localhost/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-forwarded-for": "203.0.113.8" },
+        body: JSON.stringify({
+          messages: [{ id: "1", role: "user", parts: [{ type: "text", text: "hi" }] }],
+        }),
+      }),
+    );
+    expect(res.status).toBe(429);
   });
 });

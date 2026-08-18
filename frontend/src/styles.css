@@ -5,7 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Bachpan — Editorial design system
+ * Bachpan - Editorial design system
  * Inspired by NYT / The Pudding / Reuters Graphics.
  * Serif display + clean sans body. Restrained palette with bold data accents.
  */
@@ -48,7 +48,7 @@
   --color-rule: var(--rule);
   --color-subtle: var(--subtle);
 
-  /* Data scales — semantic */
+  /* Data scales - semantic */
   --color-cmpr-50: var(--cmpr-50);
   --color-cmpr-100: var(--cmpr-100);
   --color-cmpr-300: var(--cmpr-300);
@@ -103,7 +103,7 @@
   --input: var(--rule);
   --ring: oklch(0.55 0.18 30);
 
-  /* CMPR — red sequential (light → dark) */
+  /* CMPR - red sequential (light → dark) */
   --cmpr-50:  oklch(0.97 0.02 30);
   --cmpr-100: oklch(0.93 0.05 28);
   --cmpr-300: oklch(0.78 0.13 28);
@@ -111,7 +111,7 @@
   --cmpr-700: oklch(0.48 0.20 28);
   --cmpr-900: oklch(0.32 0.15 28);
 
-  /* Education — blue sequential */
+  /* Education - blue sequential */
   --edu-50:  oklch(0.97 0.02 240);
   --edu-100: oklch(0.92 0.05 240);
   --edu-300: oklch(0.75 0.12 240);
@@ -213,4 +213,129 @@
   background: oklch(1 0 0);
   border-radius: 1.1rem;
   box-shadow: 0 8px 24px oklch(0.35 0.03 50 / 0.07);
+}
+
+.tathya-mark {
+  overflow: visible;
+  display: block;
+}
+
+.tathya-mark .tathya-bot {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+}
+
+.tathya-mark[data-pose="idle"] .tathya-arms-up,
+.tathya-mark[data-pose="idle"] .tathya-hands-hold,
+.tathya-mark[data-pose="idle"] .tathya-barbell,
+.tathya-mark[data-pose="idle"] .tathya-plant,
+.tathya-mark[data-pose="idle"] .tathya-eyes-happy,
+.tathya-mark[data-pose="idle"] .tathya-eyes-focus,
+.tathya-mark[data-pose="idle"] .tathya-eyes-star,
+.tathya-mark[data-pose="idle"] .tathya-mouth {
+  display: none;
+}
+
+.tathya-mark[data-pose="wave"] .tathya-arms-down,
+.tathya-mark[data-pose="wave"] .tathya-hands-hold,
+.tathya-mark[data-pose="wave"] .tathya-barbell,
+.tathya-mark[data-pose="wave"] .tathya-plant,
+.tathya-mark[data-pose="wave"] .tathya-eyes-round,
+.tathya-mark[data-pose="wave"] .tathya-eyes-focus,
+.tathya-mark[data-pose="wave"] .tathya-eyes-star,
+.tathya-mark[data-pose="wave"] .tathya-mouth {
+  display: none;
+}
+
+.tathya-mark[data-pose="think"] .tathya-arms-down,
+.tathya-mark[data-pose="think"] .tathya-arms-up,
+.tathya-mark[data-pose="think"] .tathya-hands-hold,
+.tathya-mark[data-pose="think"] .tathya-plant,
+.tathya-mark[data-pose="think"] .tathya-eyes-round,
+.tathya-mark[data-pose="think"] .tathya-eyes-happy,
+.tathya-mark[data-pose="think"] .tathya-eyes-star,
+.tathya-mark[data-pose="think"] .tathya-mouth {
+  display: none;
+}
+
+.tathya-mark[data-pose="grow"] .tathya-arms-down,
+.tathya-mark[data-pose="grow"] .tathya-arms-up,
+.tathya-mark[data-pose="grow"] .tathya-barbell,
+.tathya-mark[data-pose="grow"] .tathya-eyes-round,
+.tathya-mark[data-pose="grow"] .tathya-eyes-happy,
+.tathya-mark[data-pose="grow"] .tathya-eyes-focus {
+  display: none;
+}
+
+.tathya-mark[data-animate="1"][data-pose="idle"] .tathya-bot,
+.tathya-mark[data-animate="1"][data-pose="wave"] .tathya-bot,
+.tathya-mark[data-animate="1"][data-pose="grow"] .tathya-bot {
+  animation: tathya-bob 2.6s ease-in-out infinite;
+}
+
+.tathya-mark[data-animate="1"][data-pose="idle"] .tathya-eyes-round {
+  animation: tathya-blink-open 4.4s ease-in-out infinite;
+}
+.tathya-mark[data-animate="1"][data-pose="idle"] .tathya-eyes-happy {
+  display: block;
+  animation: tathya-blink-shut 4.4s ease-in-out infinite;
+}
+
+.tathya-mark[data-animate="1"][data-pose="wave"] .tathya-arms-up {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: tathya-wave 1.1s ease-in-out infinite;
+}
+
+.tathya-mark[data-animate="1"][data-pose="think"] .tathya-barbell {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: tathya-lift 0.9s ease-in-out infinite;
+}
+
+.tathya-mark[data-animate="1"][data-pose="grow"] .tathya-plant {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: tathya-sprout 1.8s ease-in-out infinite;
+}
+
+@keyframes tathya-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2.5px); }
+}
+
+@keyframes tathya-blink-open {
+  0%, 88%, 96%, 100% { opacity: 1; }
+  90%, 94% { opacity: 0; }
+}
+
+@keyframes tathya-blink-shut {
+  0%, 88%, 96%, 100% { opacity: 0; }
+  90%, 94% { opacity: 1; }
+}
+
+@keyframes tathya-wave {
+  0%, 100% { transform: rotate(-8deg); }
+  50% { transform: rotate(10deg); }
+}
+
+@keyframes tathya-lift {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+@keyframes tathya-sprout {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tathya-mark .tathya-bot,
+  .tathya-mark .tathya-eyes-round,
+  .tathya-mark .tathya-eyes-happy,
+  .tathya-mark .tathya-arms-up,
+  .tathya-mark .tathya-barbell,
+  .tathya-mark .tathya-plant {
+    animation: none !important;
+  }
 }

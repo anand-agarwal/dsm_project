@@ -25,7 +25,7 @@ export const censusAgentTools = {
 
   run_census_query: tool({
     description:
-      "Run a typed Census query against Postgres. Never invent SQL. Rates are computed in code. Years are only 2001 or 2011.",
+      "Run a typed Census of India C-series query against Postgres. Never invent SQL. Rates are computed in code. Queryable years are currently 2001 or 2011 only.",
     inputSchema: z.object({
       cardId: z
         .string()
@@ -51,7 +51,7 @@ export const censusAgentTools = {
 
   web_search: tool({
     description:
-      "Web search via Firecrawl (then DuckDuckGo / OpenAlex). Use for laws, schemes, definitions, and background. Never use this for Census C-table rates — those come from run_census_query.",
+      "Live web search via Firecrawl (then DuckDuckGo / OpenAlex). Use for latest news, census operations after 2011, other surveys (NFHS), laws, schemes, definitions, and any question not answered by C-series tables. Always call this when the user asks to search or asks what is current. Never use this for Census C-table rates - those come from run_census_query.",
     inputSchema: z.object({
       query: z
         .string()

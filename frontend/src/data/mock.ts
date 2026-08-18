@@ -152,7 +152,7 @@ export function educationDist(state: string, year: Year) {
   };
 }
 
-// CMPR by worker category — Section C.
+// CMPR by worker category - Section C.
 export const WORKER_CATEGORIES = [
   "Cultivators",
   "Agricultural labourers",
@@ -179,7 +179,7 @@ export function cmprByWorker(state: string, year: Year, gender: Gender = "female
   }));
 }
 
-// School attendance vs not-attending vs working — Section E.
+// School attendance vs not-attending vs working - Section E.
 export function schoolingSplit(state: string, year: Year, gender: Gender = "female") {
   const drop = dropoutRate(state, year, gender);
   const cl = childLabour(state, year);
