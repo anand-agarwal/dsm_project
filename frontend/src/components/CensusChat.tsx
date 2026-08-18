@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } 
 import { ArrowUp } from "lucide-react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, isTextUIPart, isToolUIPart, type UIMessage } from "ai";
-import { AGENT_NAME } from "@/agent/identity";
+import { AGENT_NAME_HI } from "@/agent/identity";
 import { TathyaMark } from "@/components/TathyaMark";
 import { messagesSignature } from "@/lib/tathyaThreads";
 import { matchResearchSource } from "@/agent/researchSources";
@@ -151,7 +151,16 @@ export function CensusChat({
             {page && (
               <div className="pt-6 pb-4 text-center">
                 <div className="eyebrow mb-3">Social infographics · India</div>
-                <h1 className="font-display text-4xl md:text-5xl tracking-tight text-ink">{AGENT_NAME}</h1>
+                <div className="flex flex-col items-center justify-center gap-2">
+                  <TathyaMark pose="wave" size={88} decorative={false} />
+                  <h1
+                    className="brand-hi text-5xl md:text-6xl font-semibold text-ink"
+                    lang="hi"
+                    aria-hidden
+                  >
+                    {AGENT_NAME_HI}
+                  </h1>
+                </div>
                 <p className="mt-3 text-sm text-subtle leading-relaxed max-w-[42ch] mx-auto">
                   Census C-series rates from the database (2001 and 2011 today), and live search for news, policy, and later census rounds.
                 </p>
