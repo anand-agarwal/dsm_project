@@ -3,6 +3,12 @@ import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { censusAgentTools } from "./censusTools";
 import { checkChatRateLimit, clientIpFromRequest } from "./chatRateLimit";
+import {
+  groqProviderOptions,
+  resolveGroqModelId,
+  sanitizeGroqChatBody,
+  type GroqChatModelId,
+} from "./groqModels";
 
 const SYSTEM = `You are Tathya, Bachpan's social-infographics chatbot for India.
 
@@ -29,6 +35,7 @@ Census query rules (run_census_query):
 - Omit ageBand unless the user named an age. Default is All ages. Do not put ST/SC/female/married into ageBand.
 - When you report a rate, quote the percentage AND the numerator/denominator AND year, area (Total/Rural/Urban), sex, social group, and age band.
 - If a tool returns ok:false or 0 rows, quote the tool error/hint. Do not invent causes such as a missing table or a "State - NAME" format mismatch.
+- Tool arguments must be a single compact JSON object. year is exactly "2001" or "2011". Do not put reasoning, markdown, or comments inside tool arguments.
 
 Refuse only questions unrelated to India social statistics, demography, education, gender, caste/tribe, religion, child marriage, public health context, or related policy and data.`;
 
@@ -36,17 +43,17 @@ function env(name: string): string | undefined {
   return process.env[name]?.trim() || undefined;
 }
 
-export function getQwenModel() {
-  const apiKey = env("HF_TOKEN") ?? env("HUGGINGFACE_API_KEY");
+export function getChatModel(modelId: GroqChatModelId) {
+  const apiKey = env("GROQ_API_KEY");
   if (!apiKey) {
-    throw new Error("Missing HF_TOKEN. Add a Hugging Face token to frontend/.env.local (no VITE_ prefix).");
+    throw new Error("Missing GROQ_API_KEY. Add a Groq API key to frontend/.env.local (no VITE_ prefix).");
   }
   const provider = createOpenAICompatible({
-    name: "huggingface",
+    name: "groq",
     apiKey,
-    baseURL: env("HF_BASE_URL") ?? "https://router.huggingface.co/v1",
+    baseURL: env("GROQ_BASE_URL") ?? "https://api.groq.com/openai/v1",
+    transformRequestBody: (body) => sanitizeGroqChatBody(body as Parameters<typeof sanitizeGroqChatBody>[0]),
   });
-  const modelId = env("QWEN_MODEL") ?? "Qwen/Qwen3-8B";
   return provider.chatModel(modelId);
 }
 
@@ -66,19 +73,9 @@ export async function handleCensusChat(request: Request): Promise<Response> {
     );
   }
 
-  let model;
+  let body: { messages?: UIMessage[]; model?: string };
   try {
-    model = getQwenModel();
-  } catch (err) {
-    return Response.json(
-      { error: err instanceof Error ? err.message : "Model config error" },
-      { status: 500 },
-    );
-  }
-
-  let body: { messages?: UIMessage[] };
-  try {
-    body = (await request.json()) as { messages?: UIMessage[] };
+    body = (await request.json()) as { messages?: UIMessage[]; model?: string };
   } catch {
     return Response.json({ error: "Invalid JSON body" }, { status: 400 });
   }
@@ -86,6 +83,26 @@ export async function handleCensusChat(request: Request): Promise<Response> {
   const uiMessages = Array.isArray(body.messages) ? body.messages : [];
   if (uiMessages.length === 0) {
     return Response.json({ error: "messages is required" }, { status: 400 });
+  }
+
+  let modelId: GroqChatModelId;
+  try {
+    modelId = resolveGroqModelId(body.model ?? env("GROQ_MODEL"));
+  } catch (err) {
+    return Response.json(
+      { error: err instanceof Error ? err.message : "Unknown model" },
+      { status: 400 },
+    );
+  }
+
+  let model;
+  try {
+    model = getChatModel(modelId);
+  } catch (err) {
+    return Response.json(
+      { error: err instanceof Error ? err.message : "Model config error" },
+      { status: 500 },
+    );
   }
 
   const modelMessages = await convertToModelMessages(uiMessages, {
@@ -101,6 +118,7 @@ export async function handleCensusChat(request: Request): Promise<Response> {
     stopWhen: stepCountIs(8),
     temperature: 0.2,
     maxRetries: 1,
+    providerOptions: groqProviderOptions(modelId),
   });
 
   return result.toUIMessageStreamResponse();

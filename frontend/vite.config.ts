@@ -10,10 +10,9 @@ export default defineConfig(({ mode }) => {
   // Chat /api runs in Node (this Vite plugin), not the browser bundle.
   // import.meta.env.VITE_* is not substituted in that path, so copy keys here.
   for (const key of [
-    "HF_TOKEN",
-    "HUGGINGFACE_API_KEY",
-    "HF_BASE_URL",
-    "QWEN_MODEL",
+    "GROQ_API_KEY",
+    "GROQ_BASE_URL",
+    "GROQ_MODEL",
     "VITE_SUPABASE_URL",
     "VITE_SUPABASE_ANON_KEY",
     "FIRECRAWL_API_KEY",
