@@ -810,8 +810,8 @@
 
   <!-- 1. MOTIVATION -->
   <section id="motivation">
-    <h2><span class="section-num">01 — Motivation</span>Why Does This Matter?</h2>
-    <p>Child marriage — any formal or informal union where at least one party is under 18 — remains a deeply entrenched crisis in South Asia. India alone is home to roughly <strong>a third of the world's child brides</strong>. Despite the Prohibition of Child Marriage Act (2006), enforcement gaps persist. The practice continues to cluster around poverty, educational exclusion, and social marginalisation in ways that are uneven and often invisible in aggregate national statistics.</p>
+    <h2><span class="section-num">01 - Motivation</span>Why Does This Matter?</h2>
+    <p>Child marriage - any formal or informal union where at least one party is under 18 - remains a deeply entrenched crisis in South Asia. India alone is home to roughly <strong>a third of the world's child brides</strong>. Despite the Prohibition of Child Marriage Act (2006), enforcement gaps persist. The practice continues to cluster around poverty, educational exclusion, and social marginalisation in ways that are uneven and often invisible in aggregate national statistics.</p>
 
     <div class="stat-row">
       <div class="stat-card">
@@ -834,24 +834,24 @@
 
     <p>This project asks two questions:</p>
     <p><strong>Primary:</strong> What socio-economic, educational, religious, and demographic factors are the strongest predictors of child marriage rates across Indian states?</p>
-    <p><strong>Comparative:</strong> How did the relative importance of these factors shift between the 2001 and 2011 censuses — and do driver patterns differ across Scheduled Caste, Scheduled Tribe, and religious sub-populations?</p>
+    <p><strong>Comparative:</strong> How did the relative importance of these factors shift between the 2001 and 2011 censuses - and do driver patterns differ across Scheduled Caste, Scheduled Tribe, and religious sub-populations?</p>
 
     <div class="pullquote">
       "An evidence-based, state-level view of these factors can inform policy interventions, prioritise resource allocation, and help NGOs identify the most vulnerable pockets of the population."
     </div>
 
-    <p>By running separate LASSO models for each census year and each population sub-group, we move beyond a static snapshot. We ask not just <em>what predicts child marriage</em>, but <em>what changed over a decade</em> — and why.</p>
+    <p>By running separate LASSO models for each census year and each population sub-group, we move beyond a static snapshot. We ask not just <em>what predicts child marriage</em>, but <em>what changed over a decade</em> - and why.</p>
   </section>
 
   <!-- 2. DATA -->
   <section id="data">
-    <h2><span class="section-num">02 — Data</span>The Census of India</h2>
+    <h2><span class="section-num">02 - Data</span>The Census of India</h2>
     <p>Our primary source is the <strong>Census of India</strong>, administered by the Office of the Registrar General &amp; Census Commissioner. We draw on two waves: the 2001 census as a historical baseline, and the 2011 census as the main analytical dataset, which provides individual-year age granularity and richer sub-group breakdowns.</p>
 
     <div class="div rule-divider"></div>
 
     <h3>Which tables did we use?</h3>
-    <p>The census is not a single clean table — it's a sprawling archive of sub-tables, each covering one intersection of population characteristic (marital status, education level, economic activity) × demographic group (general, SC, ST, religion) × geography (district / state). We integrate 15+ sub-tables:</p>
+    <p>The census is not a single clean table - it's a sprawling archive of sub-tables, each covering one intersection of population characteristic (marital status, education level, economic activity) × demographic group (general, SC, ST, religion) × geography (district / state). We integrate 15+ sub-tables:</p>
 
     <div class="table-wrap">
       <table>
@@ -874,14 +874,14 @@
 
     <h3>File structure and parsing challenges</h3>
     <p>Each census table is distributed as one <code>.xls</code> file per state/UT. The 2001 files use the legacy binary <strong>BIFF8</strong> format (requiring <code>xlrd</code>), while 2011 files use the XML-based format (requiring <code>openpyxl</code>). Our pipeline auto-detects the engine from each file's magic bytes.</p>
-    <p>Within each file, the <strong>first 7 rows</strong> form a multi-row merged-cell header block — data begins at row 8, where each row encodes one geographic unit × area type × age group combination.</p>
+    <p>Within each file, the <strong>first 7 rows</strong> form a multi-row merged-cell header block - data begins at row 8, where each row encodes one geographic unit × area type × age group combination.</p>
     <p>State names also required careful canonicalisation across two census waves that use different spellings and historical names ("Orissa" → "Odisha", "Uttaranchal" → "Uttarakhand", "Pondicherry" → "Puducherry" and so on).</p>
   </section>
 
   <!-- 3. INDEX -->
   <section id="index">
-    <h2><span class="section-num">03 — Index Construction</span>The CMPR</h2>
-    <p>The central metric we construct is the <strong>Currently Married Proportion Rate (CMPR)</strong> — the share of individuals in a given population segment, sex, and age bracket who are currently married.</p>
+    <h2><span class="section-num">03 - Index Construction</span>The CMPR</h2>
+    <p>The central metric we construct is the <strong>Currently Married Proportion Rate (CMPR)</strong> - the share of individuals in a given population segment, sex, and age bracket who are currently married.</p>
 
     <div class="formula">
       CMPR<sub>s,g,b</sub> = ( Currently married in segment s, sex g, bracket b ) / ( Reference population for s, g ) × 100
@@ -897,19 +897,19 @@
         <tbody>
           <tr><td><code>age_below10</code></td><td>&lt; 10 years</td><td>Extreme early marriage</td><td>Child marriage window</td></tr>
           <tr><td><code>age_10_13</code></td><td>10–13 years</td><td>Severe child marriage</td><td>Child marriage window</td></tr>
-          <tr><td><code>age_14_17</code></td><td>14–17 years</td><td><strong>Child marriage — below legal age</strong></td><td>Primary target bracket</td></tr>
+          <tr><td><code>age_14_17</code></td><td>14–17 years</td><td><strong>Child marriage - below legal age</strong></td><td>Primary target bracket</td></tr>
           <tr><td><code>age_18_21</code></td><td>18–21 years</td><td>Young adult marriage; transition zone</td><td>Child marriage window / boundary</td></tr>
-          <tr><td><code>age_22_25</code></td><td>22–25 years</td><td>Adult marriage — post-college years</td><td><strong>Control bracket</strong></td></tr>
-          <tr><td><code>age_26_29</code></td><td>26–29 years</td><td>Adult marriage — established workforce age</td><td><strong>Control bracket</strong></td></tr>
-          <tr><td><code>age_30_33</code></td><td>30–33 years</td><td>Adult marriage — mid-career age</td><td><strong>Control bracket</strong></td></tr>
-          <tr><td><code>age_34_plus</code></td><td>34+ years</td><td>Adult marriage — late-stage</td><td><strong>Control bracket</strong></td></tr>
+          <tr><td><code>age_22_25</code></td><td>22–25 years</td><td>Adult marriage - post-college years</td><td><strong>Control bracket</strong></td></tr>
+          <tr><td><code>age_26_29</code></td><td>26–29 years</td><td>Adult marriage - established workforce age</td><td><strong>Control bracket</strong></td></tr>
+          <tr><td><code>age_30_33</code></td><td>30–33 years</td><td>Adult marriage - mid-career age</td><td><strong>Control bracket</strong></td></tr>
+          <tr><td><code>age_34_plus</code></td><td>34+ years</td><td>Adult marriage - late-stage</td><td><strong>Control bracket</strong></td></tr>
         </tbody>
       </table>
     </div>
 
     <div class="callout">
       <strong>💡 Why Control Brackets Matter</strong>
-      A critique of earlier versions of this analysis noted the absence of a control group. The adult brackets (<code>age_22_25</code> through <code>age_34_plus</code>) serve this function. If illiteracy or below-primary education predicts CMPR only in the childhood brackets (age &lt; 18) but not — or in a different direction — in adult brackets, that is strong evidence the effect is genuinely age-specific and tied to the child marriage mechanism, not simply reflecting a general community-level correlation between poverty and marriage rates. Conversely, where a predictor appears across all age groups with similar sign and magnitude, it likely reflects a broader community-level trait rather than a child-marriage-specific driver.
+      A critique of earlier versions of this analysis noted the absence of a control group. The adult brackets (<code>age_22_25</code> through <code>age_34_plus</code>) serve this function. If illiteracy or below-primary education predicts CMPR only in the childhood brackets (age &lt; 18) but not - or in a different direction - in adult brackets, that is strong evidence the effect is genuinely age-specific and tied to the child marriage mechanism, not simply reflecting a general community-level correlation between poverty and marriage rates. Conversely, where a predictor appears across all age groups with similar sign and magnitude, it likely reflects a broader community-level trait rather than a child-marriage-specific driver.
     </div>
 
     <div class="callout">
@@ -920,27 +920,27 @@
     <h3>Four DataFrames, four population slices</h3>
     <p>We construct separate DataFrames for each population sub-group, each in <strong>long format</strong> (140 rows = 35 states/UTs × 4 age brackets):</p>
     <ul style="padding-left:1.4rem; margin-bottom:1.2rem; font-size:0.88rem; line-height:2;">
-      <li><strong>df_total</strong> — general population (from C-02, C-06, C-07)</li>
-      <li><strong>df_SC</strong> — Scheduled Castes (from C-02 SC, C-08 SC, C-12 SC)</li>
-      <li><strong>df_ST</strong> — Scheduled Tribes (from C-02 ST, C-08 ST, C-12 ST)</li>
-      <li><strong>df_religion</strong> — six religious communities: Hindu, Muslim, Christian, Sikh, Buddhist, Jain (from C-03 Appendix, C-09)</li>
+      <li><strong>df_total</strong> - general population (from C-02, C-06, C-07)</li>
+      <li><strong>df_SC</strong> - Scheduled Castes (from C-02 SC, C-08 SC, C-12 SC)</li>
+      <li><strong>df_ST</strong> - Scheduled Tribes (from C-02 ST, C-08 ST, C-12 ST)</li>
+      <li><strong>df_religion</strong> - six religious communities: Hindu, Muslim, Christian, Sikh, Buddhist, Jain (from C-03 Appendix, C-09)</li>
     </ul>
 
     <p>Together these produce <strong>130+ distinct metric columns</strong> covering literacy rates, below-primary education shares, school attendance rates, child labour indicators, and the CMPR itself at multiple demographic intersections.</p>
   </section>
 
 
-  <!-- INDEX DEFINITIONS SECTION — insert after Section 3 (CMPR) and before Section 4 (Pipeline) -->
+  <!-- INDEX DEFINITIONS SECTION - insert after Section 3 (CMPR) and before Section 4 (Pipeline) -->
 <section id="indexes">
-  <h2><span class="section-num">03b — Index Definitions</span>Constructed Socio-Economic Indexes</h2>
+  <h2><span class="section-num">03b - Index Definitions</span>Constructed Socio-Economic Indexes</h2>
 
-  <p>Beyond the CMPR itself, we construct a suite of socio-economic indexes from <code>C-08</code> (Educational Level by Age and Sex) and <code>C-12</code> (School Attendance by Economic Activity), computed separately for each population sub-group — general population (<code>total</code>), Scheduled Castes (<code>SC</code>), Scheduled Tribes (<code>ST</code>), and six religious communities. These indexes serve as the <strong>predictor variables</strong> in all LASSO regression models.</p>
+  <p>Beyond the CMPR itself, we construct a suite of socio-economic indexes from <code>C-08</code> (Educational Level by Age and Sex) and <code>C-12</code> (School Attendance by Economic Activity), computed separately for each population sub-group - general population (<code>total</code>), Scheduled Castes (<code>SC</code>), Scheduled Tribes (<code>ST</code>), and six religious communities. These indexes serve as the <strong>predictor variables</strong> in all LASSO regression models.</p>
 
   <p>All rates are computed within a specific age bracket (e.g., <code>age_14_17</code>) and geographic unit (state). The denominator is always the total population count for that sex × bracket × group, so rates are comparable across states of very different sizes.</p>
 
   <div class="rule-divider"></div>
 
-  <h3>C-08 — Education Indexes</h3>
+  <h3>C-08 - Education Indexes</h3>
   <p>C-08 provides individual-year population counts broken down by education level attained and sex, for ages 7 through 24+. We sum individual-year rows into the four canonical age brackets using <code>_sum_bracket()</code>, then compute the following rates. All formulas below use the SC sub-group as illustration; identical logic applies to <code>total</code>, <code>ST</code>, and religion sub-groups.</p>
 
   <div class="table-wrap">
@@ -961,12 +961,12 @@
         <tr>
           <td><code>Literacy_rate_SC_female</code></td>
           <td>Literate SC females [bracket] ÷ Total SC females [bracket]</td>
-          <td>Female literacy rate for SC population. The most universally selected predictor in the LASSO analysis — negatively associated with child marriage in every group and year.</td>
+          <td>Female literacy rate for SC population. The most universally selected predictor in the LASSO analysis - negatively associated with child marriage in every group and year.</td>
         </tr>
         <tr>
           <td><code>Illiteracy_rate_SC_female</code></td>
           <td>Illiterate SC females [bracket] ÷ Total SC females [bracket]</td>
-          <td>Complement of literacy rate. Not used as an independent predictor (collinear with literacy rate) — included for descriptive completeness and education-gradient analysis.</td>
+          <td>Complement of literacy rate. Not used as an independent predictor (collinear with literacy rate) - included for descriptive completeness and education-gradient analysis.</td>
         </tr>
         <tr>
           <td><code>Below_primary_share_SC_female</code></td>
@@ -978,15 +978,15 @@
   </div>
 
   <div class="callout">
-    <strong>⚠ Denominator Note — Below Primary Share</strong>
-    <code>Below_primary_share</code> is normalised against <em>literate</em> population, not total population. This is intentional: it measures educational depth among those who have any schooling at all, separating the question of <em>whether</em> someone is literate from <em>how far</em> their education reached. States with high below-primary shares among literates are those where schooling stalls at the lowest levels — a meaningfully different risk profile from states with high illiteracy outright.
+    <strong>⚠ Denominator Note - Below Primary Share</strong>
+    <code>Below_primary_share</code> is normalised against <em>literate</em> population, not total population. This is intentional: it measures educational depth among those who have any schooling at all, separating the question of <em>whether</em> someone is literate from <em>how far</em> their education reached. States with high below-primary shares among literates are those where schooling stalls at the lowest levels - a meaningfully different risk profile from states with high illiteracy outright.
   </div>
 
   <div class="formula">
     Below_primary_share_SC_female<sub>s,b</sub> = SC females (below-primary) / SC females (literate) &nbsp;×&nbsp; 100
   </div>
 
-  <h3>C-12 — School Attendance &amp; Child Labour Indexes</h3>
+  <h3>C-12 - School Attendance &amp; Child Labour Indexes</h3>
   <p>C-12 cross-tabulates the population aged 5–19 by school attendance status and economic activity category: main workers (≥183 days/year), marginal workers ≥36 days, marginal workers &lt;36 days, and non-workers. Each cell is further split by attendance (attending school / not attending school). We aggregate these cells into five composite indexes.</p>
 
   <div class="table-wrap">
@@ -1022,37 +1022,37 @@
           <td><code>Dropout_rate_SC_female</code></td>
           <td>All SC females not attending school (workers + non-workers)</td>
           <td>Total SC females in bracket</td>
-          <td>Female school exit rate. Directly captures girls who are neither studying nor working — the group most at risk of early marriage.</td>
+          <td>Female school exit rate. Directly captures girls who are neither studying nor working - the group most at risk of early marriage.</td>
         </tr>
         <tr>
           <td><code>Child_labour_attending_SC_male</code></td>
           <td>SC male main + marginal workers who attend school</td>
           <td>Total SC males in bracket</td>
-          <td>Working boys who remain in school simultaneously — a measure of household economic stress that hasn't yet broken schooling. In 2001 ST models, the equivalent female index had the largest coefficient in the entire study (β = −6.55).</td>
+          <td>Working boys who remain in school simultaneously - a measure of household economic stress that hasn't yet broken schooling. In 2001 ST models, the equivalent female index had the largest coefficient in the entire study (β = −6.55).</td>
         </tr>
         <tr>
           <td><code>Child_labour_attending_SC_female</code></td>
           <td>SC female main + marginal workers who attend school</td>
           <td>Total SC females in bracket</td>
-          <td>Working girls who remain in school. In 2001 this was a strong negative predictor of CMPR — keeping a girl in school, even under child labour, meaningfully reduced marriage probability. This protective signal disappeared entirely by 2011.</td>
+          <td>Working girls who remain in school. In 2001 this was a strong negative predictor of CMPR - keeping a girl in school, even under child labour, meaningfully reduced marriage probability. This protective signal disappeared entirely by 2011.</td>
         </tr>
         <tr>
           <td><code>Child_labour_dropout_SC_male</code></td>
           <td>SC male main + marginal workers who do not attend school</td>
           <td>Total SC males in bracket</td>
-          <td>Working boys who have dropped out of school — the most acute household economic distress signal. Emerged as a key positive predictor of SC female CMPR in 2011 (β = +1.21), where it was absent in 2001.</td>
+          <td>Working boys who have dropped out of school - the most acute household economic distress signal. Emerged as a key positive predictor of SC female CMPR in 2011 (β = +1.21), where it was absent in 2001.</td>
         </tr>
         <tr>
           <td><code>Child_labour_dropout_SC_female</code></td>
           <td>SC female main + marginal workers who do not attend school</td>
           <td>Total SC females in bracket</td>
-          <td>Working girls who have dropped out. Captures the intersection of economic exploitation and educational exclusion — a direct vulnerability pathway to early marriage.</td>
+          <td>Working girls who have dropped out. Captures the intersection of economic exploitation and educational exclusion - a direct vulnerability pathway to early marriage.</td>
         </tr>
         <tr>
           <td><code>Non_worker_dropout_SC_female</code></td>
           <td>SC female non-workers who do not attend school</td>
           <td>Total SC females in bracket</td>
-          <td>Girls who are neither working nor in school — a particularly acute vulnerability indicator. Not included as a LASSO predictor (collinear with dropout rate) but retained as a descriptive vulnerability flag.</td>
+          <td>Girls who are neither working nor in school - a particularly acute vulnerability indicator. Not included as a LASSO predictor (collinear with dropout rate) but retained as a descriptive vulnerability flag.</td>
         </tr>
       </tbody>
     </table>
@@ -1080,7 +1080,7 @@
     </table>
   </div>
 
-  <div class="code-label">Python · build_SC.py — C-12 aggregation (simplified)</div>
+  <div class="code-label">Python · build_SC.py - C-12 aggregation (simplified)</div>
 <pre><code><span class="cm"># Sum individual-year rows into bracket (e.g., age_14_17 → ages 14, 15, 16, 17)</span>
 agg = <span class="fn">_sum_bracket</span>(df, <span class="st">'age_group'</span>, C12_VALUE_COLS, bracket, AGE_BRACKET_C12)
 
@@ -1090,10 +1090,10 @@ cl_att_f = agg[<span class="st">'att_main_f'</span>] + agg[<span class="st">'att
 <span class="cm"># Child labour NOT attending school</span>
 cl_natt_f = agg[<span class="st">'natt_main_f'</span>] + agg[<span class="st">'natt_marg36_f'</span>] + agg[<span class="st">'natt_marg3_f'</span>]
 
-<span class="cm"># Non-worker dropout (female only — key vulnerability indicator)</span>
+<span class="cm"># Non-worker dropout (female only - key vulnerability indicator)</span>
 nonw_natt_f = agg[<span class="st">'natt_nonw_f'</span>]
 
-<span class="cm"># Final rates — safe_div returns NaN (not 0) if denominator is 0</span>
+<span class="cm"># Final rates - safe_div returns NaN (not 0) if denominator is 0</span>
 Child_labour_attending_SC_female = <span class="fn">safe_div</span>(cl_att_f,    tot_f)
 Child_labour_dropout_SC_female   = <span class="fn">safe_div</span>(cl_natt_f,   tot_f)
 Non_worker_dropout_SC_female     = <span class="fn">safe_div</span>(nonw_natt_f, tot_f)</code></pre>
@@ -1109,13 +1109,13 @@ Non_worker_dropout_SC_female     = <span class="fn">safe_div</span>(nonw_natt_f,
       <tbody>
         <tr><td><code>Literacy_rate_SC_female</code></td><td class="good">✓ Yes</td><td>Primary structural predictor</td></tr>
         <tr><td><code>Literacy_rate_SC_male</code></td><td class="good">✓ Yes</td><td>Cross-gender community signal</td></tr>
-        <tr><td><code>Illiteracy_rate_SC_female</code></td><td class="warn">✗ No</td><td>Definitional complement of literacy rate — collinear by construction</td></tr>
+        <tr><td><code>Illiteracy_rate_SC_female</code></td><td class="warn">✗ No</td><td>Definitional complement of literacy rate - collinear by construction</td></tr>
         <tr><td><code>Below_primary_share_SC_female</code></td><td class="good">✓ Yes</td><td>Captures educational depth, orthogonal to literacy rate</td></tr>
         <tr><td><code>School_attendance_rate_SC_female</code></td><td class="good">✓ Yes</td><td>Broad attendance signal; dominant protective predictor in 2001</td></tr>
         <tr><td><code>School_attendance_rate_SC_male</code></td><td class="good">✓ Yes</td><td>Cross-gender household signal</td></tr>
         <tr><td><code>Dropout_rate_SC_female</code></td><td class="good">✓ Yes</td><td>Captures exit from education</td></tr>
-        <tr><td><code>Dropout_rate_SC_male</code></td><td class="good">✓ Yes</td><td>Key 2011 predictor — joint household distress pathway</td></tr>
-        <tr><td><code>Child_labour_attending_SC_female</code></td><td class="good">✓ Yes</td><td>Work + school co-occurrence — protective signal in 2001</td></tr>
+        <tr><td><code>Dropout_rate_SC_male</code></td><td class="good">✓ Yes</td><td>Key 2011 predictor - joint household distress pathway</td></tr>
+        <tr><td><code>Child_labour_attending_SC_female</code></td><td class="good">✓ Yes</td><td>Work + school co-occurrence - protective signal in 2001</td></tr>
         <tr><td><code>Child_labour_attending_SC_male</code></td><td class="good">✓ Yes</td><td>Cross-gender analogue</td></tr>
         <tr><td><code>Child_labour_dropout_SC_female</code></td><td class="good">✓ Yes</td><td>Most acute individual risk signal</td></tr>
         <tr><td><code>Child_labour_dropout_SC_male</code></td><td class="good">✓ Yes</td><td>Joint household distress; emerged in 2011 SC models</td></tr>
@@ -1128,11 +1128,11 @@ Non_worker_dropout_SC_female     = <span class="fn">safe_div</span>(nonw_natt_f,
     <div class="finding">
       <div class="finding-num">Design Principle 01</div>
       <h4>Cross-gender indexes as community signals</h4>
-      <p>Male literacy and male child labour dropout are included as predictors of <em>female</em> CMPR. These proxy household-level educational culture and economic stress — factors that operate on marriage decisions for all members of a household, not just girls.</p>
+      <p>Male literacy and male child labour dropout are included as predictors of <em>female</em> CMPR. These proxy household-level educational culture and economic stress - factors that operate on marriage decisions for all members of a household, not just girls.</p>
     </div>
     <div class="finding">
       <div class="finding-num">Design Principle 02</div>
-      <h4>Structural rates only — no tautological inputs</h4>
+      <h4>Structural rates only - no tautological inputs</h4>
       <p>Conditional CMPR values (e.g., CMPR for illiterate women) share a denominator structure with the target variable and are excluded from LASSO inputs. Only structural rates from independent census sub-tables are used as predictors.</p>
     </div>
   </div>
@@ -1140,7 +1140,7 @@ Non_worker_dropout_SC_female     = <span class="fn">safe_div</span>(nonw_natt_f,
 
   <!-- 4. PIPELINE -->
   <section id="pipeline">
-    <h2><span class="section-num">04 — Engineering</span>Data Pipeline Architecture</h2>
+    <h2><span class="section-num">04 - Engineering</span>Data Pipeline Architecture</h2>
     <p>The entire pipeline is implemented in Python across five modules with a clear separation of concerns:</p>
 
     <div class="pipeline">
@@ -1201,7 +1201,7 @@ result = <span class="fn">reduce</span>(<span class="kw">lambda</span> a, b: a.<
 <span class="cm"># 7. Gender split → save 3 CSVs per family</span>
 <span class="fn">gender_split</span>(result, out_dir=<span class="st">"output_datasets/"</span>)</code></pre>
 
-    <p>State name canonicalisation deserves special mention. A <code>resolve_state_name()</code> function maps raw census area label strings — often suffixed with numeric codes or using historical names — to a canonical list of 35 states and UTs:</p>
+    <p>State name canonicalisation deserves special mention. A <code>resolve_state_name()</code> function maps raw census area label strings - often suffixed with numeric codes or using historical names - to a canonical list of 35 states and UTs:</p>
 
 <pre><code><span class="cm"># Examples handled by resolve_state_name()</span>
 <span class="st">"State – Andaman &amp; Nicobar Islands 35 "</span> → <span class="st">"Andaman &amp; Nicobar Islands"</span>
@@ -1229,19 +1229,19 @@ result = <span class="fn">reduce</span>(<span class="kw">lambda</span> a, b: a.<
 
   <!-- 5. MODELLING -->
   <section id="modelling">
-    <h2><span class="section-num">05 — Modelling</span>LASSO Regression</h2>
+    <h2><span class="section-num">05 - Modelling</span>LASSO Regression</h2>
 
     <h3>Why LASSO?</h3>
     <p>With 15 candidate predictors and only ~35 state-level observations, ordinary least squares would be severely overfit. We use <strong>LASSO (Least Absolute Shrinkage and Selection Operator)</strong>, which applies an L1 penalty that automatically zeroes out weak or redundant predictors. The non-zero coefficients directly answer our question: <em>which variables are the strongest drivers?</em></p>
-    <p>LASSO is also well-suited here because census education variables are <strong>highly correlated</strong> (literacy rate and illiteracy rate are definitional complements). LASSO's L1 penalty shrinks one of a correlated pair toward zero, producing stable and interpretable solutions. The resulting coefficients are directly comparable in magnitude across variables — a coefficient of −4.3 on female SC literacy means a one-standard-deviation increase in that variable is associated with a 4.3-unit decrease in CMPR_SC_female.</p>
+    <p>LASSO is also well-suited here because census education variables are <strong>highly correlated</strong> (literacy rate and illiteracy rate are definitional complements). LASSO's L1 penalty shrinks one of a correlated pair toward zero, producing stable and interpretable solutions. The resulting coefficients are directly comparable in magnitude across variables - a coefficient of −4.3 on female SC literacy means a one-standard-deviation increase in that variable is associated with a 4.3-unit decrease in CMPR_SC_female.</p>
 
     <div class="callout">
       <strong>⚠ Critical Modelling Choice</strong>
-      df_total contains <em>conditional</em> CMPR rates (e.g., CMPR_illiterate_female). These are <strong>not</strong> independent predictors — they share the same denominator as the target, creating a tautological model if used as inputs. We use them only for education-gradient analysis. Only <em>structural</em> rates (literacy rate, dropout rate, child labour rate) are used as regression predictors in SC/ST/religion models.
+      df_total contains <em>conditional</em> CMPR rates (e.g., CMPR_illiterate_female). These are <strong>not</strong> independent predictors - they share the same denominator as the target, creating a tautological model if used as inputs. We use them only for education-gradient analysis. Only <em>structural</em> rates (literacy rate, dropout rate, child labour rate) are used as regression predictors in SC/ST/religion models.
     </div>
 
     <h3>Model specification and cross-validation</h3>
-    <p>The regularisation hyperparameter α is selected via <strong>Leave-One-Out Cross-Validation (LOO-CV)</strong>, which maximises training data at each fold — appropriate for n &lt; 40. All predictors are standardised to zero mean and unit variance, so coefficients are on a comparable scale.</p>
+    <p>The regularisation hyperparameter α is selected via <strong>Leave-One-Out Cross-Validation (LOO-CV)</strong>, which maximises training data at each fold - appropriate for n &lt; 40. All predictors are standardised to zero mean and unit variance, so coefficients are on a comparable scale.</p>
 
     <div class="formula">
       CMPR[d,g,b,y] = β₀ + Σⱼ βⱼxⱼ &nbsp;&nbsp; subject to &nbsp;&nbsp; Σⱼ |βⱼ| ≤ 1/α
@@ -1276,7 +1276,7 @@ final_model = <span class="fn">Lasso</span>(alpha=best_alpha, max_iter=<span cla
 coefs = dict(<span class="fn">zip</span>(feature_names, final_model.coef_))</code></pre>
 
     <h3>Model performance summary</h3>
-    <p>The table below shows cross-validated R² for all models at the <code>age_14_17</code> bracket — the primary policy-relevant age range for child marriage. Models for the control brackets (<code>age_22_25</code> and above) are discussed in the Key Findings section:</p>
+    <p>The table below shows cross-validated R² for all models at the <code>age_14_17</code> bracket - the primary policy-relevant age range for child marriage. Models for the control brackets (<code>age_22_25</code> and above) are discussed in the Key Findings section:</p>
 
     <div class="table-wrap">
       <table>
@@ -1302,21 +1302,21 @@ coefs = dict(<span class="fn">zip</span>(feature_names, final_model.coef_))</cod
       </table>
     </div>
 
-    <p>ST models continue to achieve the best overall fit across both years. SC and Total population models deteriorate significantly by 2011. The adult control brackets (<code>age_22_25</code> and above) consistently show weaker models — smaller CV R² and fewer selected predictors — compared to the child marriage brackets, which is the expected pattern if the child-marriage-window predictors are genuinely age-specific.</p>
+    <p>ST models continue to achieve the best overall fit across both years. SC and Total population models deteriorate significantly by 2011. The adult control brackets (<code>age_22_25</code> and above) consistently show weaker models - smaller CV R² and fewer selected predictors - compared to the child marriage brackets, which is the expected pattern if the child-marriage-window predictors are genuinely age-specific.</p>
   </section>
 
   <!-- 6. FINDINGS -->
   <section id="findings">
-    <h2><span class="section-num">06 — Results</span>Key Findings</h2>
+    <h2><span class="section-num">06 - Results</span>Key Findings</h2>
 
-    <p>The expanded analysis across eight age brackets — four child marriage brackets (<code>age_below10</code> through <code>age_18_21</code>) and four adult control brackets (<code>age_22_25</code> through <code>age_34_plus</code>) — allows us to distinguish predictors that are genuinely child-marriage-specific from those reflecting broader community-level correlations.</p>
+    <p>The expanded analysis across eight age brackets - four child marriage brackets (<code>age_below10</code> through <code>age_18_21</code>) and four adult control brackets (<code>age_22_25</code> through <code>age_34_plus</code>) - allows us to distinguish predictors that are genuinely child-marriage-specific from those reflecting broader community-level correlations.</p>
 
     <h3>Control group results: what the adult brackets reveal</h3>
-    <p>For SC females in 2001, the child marriage brackets (age_10_13 and age_14_17) return meaningful models with CL attending and CL dropout as key predictors. In the adult control brackets (age_22_25 onward), all predictors are missing entirely — LASSO skips these brackets because all child labour and attendance variables are absent (not applicable to adults). This is by design: C-12 school attendance data covers only ages 5–19, so adult brackets have a structurally reduced predictor set. This structural difference is important to acknowledge: the adult brackets do not serve as perfect controls for the school-attendance-based predictors, but they <em>do</em> serve as controls for the education-level predictors (literacy, below-primary, illiteracy) from C-08.</p>
+    <p>For SC females in 2001, the child marriage brackets (age_10_13 and age_14_17) return meaningful models with CL attending and CL dropout as key predictors. In the adult control brackets (age_22_25 onward), all predictors are missing entirely - LASSO skips these brackets because all child labour and attendance variables are absent (not applicable to adults). This is by design: C-12 school attendance data covers only ages 5–19, so adult brackets have a structurally reduced predictor set. This structural difference is important to acknowledge: the adult brackets do not serve as perfect controls for the school-attendance-based predictors, but they <em>do</em> serve as controls for the education-level predictors (literacy, below-primary, illiteracy) from C-08.</p>
 
-    <p>For <strong>ST females</strong>, the control group picture is more informative. In 2001, illiteracy and below-primary share appear consistently across all age brackets — in the child marriage window <em>and</em> the adult brackets — with positive coefficients in both. For example, illiteracy predicts ST female CMPR at age_22_25 (β = +11.1), age_26_29 (β = +6.8), age_30_33 (β = +3.9), and age_34_plus (β = −2.4, sign reversal at oldest bracket). This pattern means illiteracy is a <strong>community-level correlate of marriage at all ages</strong> in ST populations — not a child-marriage-specific driver. The child-marriage-specific signal in the ST models therefore comes from the child labour and attendance indicators (age 5–19 data), which are the unique predictors in the childhood brackets.</p>
+    <p>For <strong>ST females</strong>, the control group picture is more informative. In 2001, illiteracy and below-primary share appear consistently across all age brackets - in the child marriage window <em>and</em> the adult brackets - with positive coefficients in both. For example, illiteracy predicts ST female CMPR at age_22_25 (β = +11.1), age_26_29 (β = +6.8), age_30_33 (β = +3.9), and age_34_plus (β = −2.4, sign reversal at oldest bracket). This pattern means illiteracy is a <strong>community-level correlate of marriage at all ages</strong> in ST populations - not a child-marriage-specific driver. The child-marriage-specific signal in the ST models therefore comes from the child labour and attendance indicators (age 5–19 data), which are the unique predictors in the childhood brackets.</p>
 
-    <p>For the <strong>Total population</strong>, the control bracket pattern is equally important. In 2001, female CMPR for ages 22–25 shows illiteracy with β = −5.5 (negative — high illiteracy regions have <em>lower</em> adult CMPR, the opposite of the childhood brackets). This sign reversal suggests a composition effect: high-illiteracy states marry girls off early, so fewer women remain unmarried at age 22–25 to show up as currently marrying. In 2011, for Total females, illiteracy predicts CMPR negatively at all adult brackets (age_22_25: β = −3.4; age_26_29: β = −1.4; age_30_33: β = −0.5; age_34_plus: β = −0.2). This consistent negative direction in adult brackets, versus positive direction in child marriage brackets, strongly validates that illiteracy is operating as a genuine child-marriage-risk predictor in the younger brackets — not just a poverty proxy.</p>
+    <p>For the <strong>Total population</strong>, the control bracket pattern is equally important. In 2001, female CMPR for ages 22–25 shows illiteracy with β = −5.5 (negative - high illiteracy regions have <em>lower</em> adult CMPR, the opposite of the childhood brackets). This sign reversal suggests a composition effect: high-illiteracy states marry girls off early, so fewer women remain unmarried at age 22–25 to show up as currently marrying. In 2011, for Total females, illiteracy predicts CMPR negatively at all adult brackets (age_22_25: β = −3.4; age_26_29: β = −1.4; age_30_33: β = −0.5; age_34_plus: β = −0.2). This consistent negative direction in adult brackets, versus positive direction in child marriage brackets, strongly validates that illiteracy is operating as a genuine child-marriage-risk predictor in the younger brackets - not just a poverty proxy.</p>
 
     <div class="callout">
       <strong>💡 Control Group Interpretation Summary</strong>
@@ -1327,69 +1327,69 @@ coefs = dict(<span class="fn">zip</span>(feature_names, final_model.coef_))</cod
       <div class="finding">
         <div class="finding-num">LASSO Finding 01</div>
         <h4>SC Female 2001: CL attending is the primary protective driver</h4>
-        <p>For SC females at <code>age_14_17</code> in 2001, the two selected predictors are CL attending (β = −15.2) and CL dropout (β = −5.7) — both negative. CV R² = 0.564. At <code>age_10_13</code>, CL attending alone is selected (β = −0.87). CL attending predictors are absent in adult brackets (age 22+), confirming this is a child-marriage-specific signal.</p>
+        <p>For SC females at <code>age_14_17</code> in 2001, the two selected predictors are CL attending (β = −15.2) and CL dropout (β = −5.7) - both negative. CV R² = 0.564. At <code>age_10_13</code>, CL attending alone is selected (β = −0.87). CL attending predictors are absent in adult brackets (age 22+), confirming this is a child-marriage-specific signal.</p>
       </div>
       <div class="finding">
         <div class="finding-num">LASSO Finding 02</div>
         <h4>SC Female 2011: model collapses to a weak single predictor</h4>
-        <p>By 2011, the SC female model at <code>age_14_17</code> selects only Below primary (β = +0.79) with CV R² = −0.090 — a near-complete loss of explanatory power. At <code>age_18_21</code>, however, the model recovers strongly: Dropout, Illiteracy, Below primary, CL dropout, Attendance all selected, CV R² = 0.564. The shift suggests the dominant risk window moved upward in age by 2011.</p>
+        <p>By 2011, the SC female model at <code>age_14_17</code> selects only Below primary (β = +0.79) with CV R² = −0.090 - a near-complete loss of explanatory power. At <code>age_18_21</code>, however, the model recovers strongly: Dropout, Illiteracy, Below primary, CL dropout, Attendance all selected, CV R² = 0.564. The shift suggests the dominant risk window moved upward in age by 2011.</p>
       </div>
       <div class="finding">
         <div class="finding-num">LASSO Finding 03</div>
         <h4>ST Female 2001: strongest fit in the study; CL attending dominates</h4>
-        <p>ST female at <code>age_14_17</code> in 2001 achieves CV R² = 0.705 — the highest in the analysis. CL attending (β = −5.88), Below primary (β = +1.82), Illiteracy (β = +1.70) are all selected. In the adult control brackets, Below primary and Illiteracy persist with positive signs — confirming they are community-level traits — while the child-labour signal (absent in adult brackets by construction) is age-specific.</p>
+        <p>ST female at <code>age_14_17</code> in 2001 achieves CV R² = 0.705 - the highest in the analysis. CL attending (β = −5.88), Below primary (β = +1.82), Illiteracy (β = +1.70) are all selected. In the adult control brackets, Below primary and Illiteracy persist with positive signs - confirming they are community-level traits - while the child-labour signal (absent in adult brackets by construction) is age-specific.</p>
       </div>
       <div class="finding">
         <div class="finding-num">LASSO Finding 04</div>
         <h4>ST Female 2011: dropout replaces attendance; control brackets stable</h4>
-        <p>At <code>age_14_17</code> in 2011, Dropout (β = +0.92), Below primary (β = +0.83), and CL attending (β = −0.30) are selected. The control brackets in 2011 show Illiteracy continuing as a positive predictor across age_22_25 (β = +9.7), age_26_29 (β = +5.9), age_30_33 (β = +3.8) — a community-level signal stable across all brackets.</p>
+        <p>At <code>age_14_17</code> in 2011, Dropout (β = +0.92), Below primary (β = +0.83), and CL attending (β = −0.30) are selected. The control brackets in 2011 show Illiteracy continuing as a positive predictor across age_22_25 (β = +9.7), age_26_29 (β = +5.9), age_30_33 (β = +3.8) - a community-level signal stable across all brackets.</p>
       </div>
       <div class="finding">
         <div class="finding-num">LASSO Finding 05</div>
         <h4>Total population 2001: sign reversal validates child-marriage specificity</h4>
-        <p>At <code>age_14_17</code> for Total females in 2001, CL dropout (β = +6.34) and CL attending (β = −0.98) are selected. In the adult control bracket <code>age_22_25</code>, Illiteracy flips to β = −5.52 — <em>negative</em>. This sign reversal is strong evidence that the childhood-bracket signal is age-specific, not a generic poverty proxy.</p>
+        <p>At <code>age_14_17</code> for Total females in 2001, CL dropout (β = +6.34) and CL attending (β = −0.98) are selected. In the adult control bracket <code>age_22_25</code>, Illiteracy flips to β = −5.52 - <em>negative</em>. This sign reversal is strong evidence that the childhood-bracket signal is age-specific, not a generic poverty proxy.</p>
       </div>
       <div class="finding">
         <div class="finding-num">LASSO Finding 06</div>
         <h4>Muslim Female: below-primary persists across all brackets in 2001</h4>
-        <p>For Muslim females in 2001, Below primary and Illiteracy are selected at every bracket from <code>age_10_13</code> through <code>age_34_plus</code> with consistently positive coefficients. This indicates below-primary education is a community-wide correlate of marriage for Muslim females — but its persistence specifically in the child marriage window (larger coefficients at <code>age_14_17</code>) suggests an amplified effect there, not just a generic correlation.</p>
+        <p>For Muslim females in 2001, Below primary and Illiteracy are selected at every bracket from <code>age_10_13</code> through <code>age_34_plus</code> with consistently positive coefficients. This indicates below-primary education is a community-wide correlate of marriage for Muslim females - but its persistence specifically in the child marriage window (larger coefficients at <code>age_14_17</code>) suggests an amplified effect there, not just a generic correlation.</p>
       </div>
       <div class="finding">
         <div class="finding-num">LASSO Finding 07</div>
         <h4>Hindu Male: almost entirely unpredictable</h4>
-        <p>Hindu male CMPR models return zero selected predictors across all age brackets in both 2001 and 2011. The predictor set for male sub-groups in religion models is limited to Illiteracy and Literacy — and for Hindu males, these offer no explanatory power. This is consistent with CMPR for Hindu males being driven by unobserved state-level norms not captured in education statistics alone.</p>
+        <p>Hindu male CMPR models return zero selected predictors across all age brackets in both 2001 and 2011. The predictor set for male sub-groups in religion models is limited to Illiteracy and Literacy - and for Hindu males, these offer no explanatory power. This is consistent with CMPR for Hindu males being driven by unobserved state-level norms not captured in education statistics alone.</p>
       </div>
       <div class="finding">
         <div class="finding-num">LASSO Finding 08</div>
         <h4>Control brackets: adult Muslim male illiteracy predicts marriage positively</h4>
-        <p>For Muslim males, illiteracy is consistently selected across adult control brackets in 2001 with positive signs (age_22_25: β = +1.38; age_26_29: β = +1.41; age_30_33: β = +1.45; age_34_plus: β = +1.73). This strengthens — not undermines — the child marriage finding: male illiteracy correlates with Muslim male marriage across all ages, but is particularly elevated at age_14_17 (β = +1.03), consistent with a genuine risk amplification in the child marriage window.</p>
+        <p>For Muslim males, illiteracy is consistently selected across adult control brackets in 2001 with positive signs (age_22_25: β = +1.38; age_26_29: β = +1.41; age_30_33: β = +1.45; age_34_plus: β = +1.73). This strengthens - not undermines - the child marriage finding: male illiteracy correlates with Muslim male marriage across all ages, but is particularly elevated at age_14_17 (β = +1.03), consistent with a genuine risk amplification in the child marriage window.</p>
       </div>
     </div>
 
     <h3>Female literacy predicts male child marriage too</h3>
-    <p>One of the more striking results: female literacy is nearly as strong a predictor of <em>male</em> child marriage rates as it is of female rates. This suggests it is not operating purely through individual women's agency but proxies a <strong>broader community-level educational environment</strong> — a culture of schooling that delays marriage for all members <a href="#ref1" class="ref-link">[1]</a><a href="#ref4" class="ref-link">[4]</a>. The control brackets reinforce this: in adult brackets where female literacy data is available, it continues to show up as a predictor, indicating it is a persistent community trait — but its coefficient is typically <em>larger in magnitude</em> in the child marriage window than in adult brackets, suggesting an amplified effect on early marriage specifically.</p>
+    <p>One of the more striking results: female literacy is nearly as strong a predictor of <em>male</em> child marriage rates as it is of female rates. This suggests it is not operating purely through individual women's agency but proxies a <strong>broader community-level educational environment</strong> - a culture of schooling that delays marriage for all members <a href="#ref1" class="ref-link">[1]</a><a href="#ref4" class="ref-link">[4]</a>. The control brackets reinforce this: in adult brackets where female literacy data is available, it continues to show up as a predictor, indicating it is a persistent community trait - but its coefficient is typically <em>larger in magnitude</em> in the child marriage window than in adult brackets, suggesting an amplified effect on early marriage specifically.</p>
 
     <h3>Male child labour dropout predicts female child marriage</h3>
-    <p>The Pearson correlation between <em>male</em> child labour dropout (SC) and <em>female</em> CMPR SC at age 14–17 is r = 0.55 — nearly as high as the female illiteracy correlation. This points to a <strong>joint household distress mechanism</strong>: when boys drop out of school to work, girls in the same household are married off. This predictor is structurally absent in adult brackets (C-12 ends at age 19), which means we cannot directly test it in the control brackets — but the very structure of the data supports its interpretation as a child-specific signal: it can only operate during the ages 5–19 school window, which precisely corresponds to the child marriage risk window <a href="#ref1" class="ref-link">[1]</a>.</p>
+    <p>The Pearson correlation between <em>male</em> child labour dropout (SC) and <em>female</em> CMPR SC at age 14–17 is r = 0.55 - nearly as high as the female illiteracy correlation. This points to a <strong>joint household distress mechanism</strong>: when boys drop out of school to work, girls in the same household are married off. This predictor is structurally absent in adult brackets (C-12 ends at age 19), which means we cannot directly test it in the control brackets - but the very structure of the data supports its interpretation as a child-specific signal: it can only operate during the ages 5–19 school window, which precisely corresponds to the child marriage risk window <a href="#ref1" class="ref-link">[1]</a>.</p>
 
     <div class="pullquote">
-      "When boys drop out to work, girls are married off — a joint distress signal that cross-gender education statistics alone cannot reveal."
+      "When boys drop out to work, girls are married off - a joint distress signal that cross-gender education statistics alone cannot reveal."
     </div>
   </section>
 
   <!-- 7. CHANGE -->
   <section id="change">
-    <h2><span class="section-num">07 — Temporal Analysis</span>What Changed, 2001 → 2011?</h2>
+    <h2><span class="section-num">07 - Temporal Analysis</span>What Changed, 2001 → 2011?</h2>
 
     <p>The comparative analysis design fits <strong>identical model specifications on 2001 and 2011 data separately</strong>, across all eight age brackets, then classifies each predictor as: <em>persistent</em> (non-zero in both years), <em>emerged</em> (zero in 2001, non-zero in 2011), or <em>dropped</em> (non-zero in 2001, zeroed in 2011).</p>
 
     <h3>Macro context: India 2001–2011</h3>
-    <p>The decade between the two censuses was one of significant — but uneven — transformation. National literacy rose from 64.8% to 74.0%, with female literacy increasing from 53.7% to 65.5%, and the male–female literacy gap narrowing from 21.6 to 16.7 percentage points <a href="#ref3" class="ref-link">[3]</a>. GDP growth averaged 6–8% per year, but gains were unevenly distributed, with persistent rural and lower-caste deprivation shaping household decisions around schooling and child marriage <a href="#ref2" class="ref-link">[2]</a><a href="#ref5" class="ref-link">[5]</a>. Programmes like the Sarva Shiksha Abhiyan reduced spatial gradients in school attendance, compressing between-state variation in literacy — which directly explains the weakened predictive power of literacy in 2011 models.</p>
+    <p>The decade between the two censuses was one of significant - but uneven - transformation. National literacy rose from 64.8% to 74.0%, with female literacy increasing from 53.7% to 65.5%, and the male–female literacy gap narrowing from 21.6 to 16.7 percentage points <a href="#ref3" class="ref-link">[3]</a>. GDP growth averaged 6–8% per year, but gains were unevenly distributed, with persistent rural and lower-caste deprivation shaping household decisions around schooling and child marriage <a href="#ref2" class="ref-link">[2]</a><a href="#ref5" class="ref-link">[5]</a>. Programmes like the Sarva Shiksha Abhiyan reduced spatial gradients in school attendance, compressing between-state variation in literacy - which directly explains the weakened predictive power of literacy in 2011 models.</p>
 
     <h3>SC Female: model collapses at age_14_17, recovers at age_18_21</h3>
-    <p>The most striking 2001→2011 shift for SC females is the near-complete collapse of the <code>age_14_17</code> model. In 2001, CL attending (β = −15.16) and CL dropout (β = −5.69) were the selected predictors at CV R² = 0.564. In 2011, only Below primary (β = +0.79) survives, and CV R² falls to −0.090 — literally worse than predicting the mean. The key question is where the predictive signal went.</p>
+    <p>The most striking 2001→2011 shift for SC females is the near-complete collapse of the <code>age_14_17</code> model. In 2001, CL attending (β = −15.16) and CL dropout (β = −5.69) were the selected predictors at CV R² = 0.564. In 2011, only Below primary (β = +0.79) survives, and CV R² falls to −0.090 - literally worse than predicting the mean. The key question is where the predictive signal went.</p>
 
-    <p>It moved to <code>age_18_21</code>. In 2011, the SC female model at age_18_21 is the strongest of all 2011 SC models: six predictors selected (Dropout, Illiteracy, Below primary, CL dropout, Attendance, Literacy) at CV R² = 0.564. This suggests that while age 14–17 child marriage became harder to predict with available variables, age 18–21 marriage — the upper end of the child marriage window — consolidated as the operative risk age group by 2011. This is consistent with real-world reports of girls being held back from child marriage but still marrying at 18 as a result of social and economic pressures <a href="#ref4" class="ref-link">[4]</a>.</p>
+    <p>It moved to <code>age_18_21</code>. In 2011, the SC female model at age_18_21 is the strongest of all 2011 SC models: six predictors selected (Dropout, Illiteracy, Below primary, CL dropout, Attendance, Literacy) at CV R² = 0.564. This suggests that while age 14–17 child marriage became harder to predict with available variables, age 18–21 marriage - the upper end of the child marriage window - consolidated as the operative risk age group by 2011. This is consistent with real-world reports of girls being held back from child marriage but still marrying at 18 as a result of social and economic pressures <a href="#ref4" class="ref-link">[4]</a>.</p>
 
     <div class="table-wrap">
       <table>
@@ -1403,12 +1403,12 @@ coefs = dict(<span class="fn">zip</span>(feature_names, final_model.coef_))</cod
     </div>
 
     <h3>SC Male: illiteracy emerges in 2011 at the transition-age bracket</h3>
-    <p>For SC males, the 2001 model at <code>age_14_17</code> selects only CL attending (β = −2.05), while the 2011 model selects CL dropout (β = +0.43) and Illiteracy (β = +0.27). The emergence of illiteracy as a predictor in 2011 (absent in 2001) at the transition-age bracket is consistent with the macro literacy expansion: as average literacy rose, the states that remained below average were the same states with elevated child marriage — making the residual variation more visible to LASSO than before. For the adult control brackets in 2011, Illiteracy (β = +8.77 at age_22_25) and Graduate share (β = +0.96) are the dominant predictors, confirming that education gradients continue to shape marriage patterns at all ages.</p>
+    <p>For SC males, the 2001 model at <code>age_14_17</code> selects only CL attending (β = −2.05), while the 2011 model selects CL dropout (β = +0.43) and Illiteracy (β = +0.27). The emergence of illiteracy as a predictor in 2011 (absent in 2001) at the transition-age bracket is consistent with the macro literacy expansion: as average literacy rose, the states that remained below average were the same states with elevated child marriage - making the residual variation more visible to LASSO than before. For the adult control brackets in 2011, Illiteracy (β = +8.77 at age_22_25) and Graduate share (β = +0.96) are the dominant predictors, confirming that education gradients continue to shape marriage patterns at all ages.</p>
 
     <h3>ST Female: dropout emerges; below-primary entrenched across all brackets</h3>
     <p>The ST female shift is structurally similar to SC but with stronger 2011 models. At <code>age_14_17</code>, the 2011 model drops CL attending as primary driver (it falls to β = −0.30) and adds Dropout (β = +0.92) and Below primary (β = +0.83) as new dominant predictors, with CV R² = 0.310. At <code>age_18_21</code>, the 2011 model is the strongest in the ST series: Dropout (β = +7.52), Illiteracy (β = +3.89), Below primary (β = +2.30) are all selected, CV R² = 0.731.</p>
 
-    <p><strong>Below primary (ST F) is the key invariant:</strong> it is selected as a positive predictor across every bracket in both years — including all four adult control brackets. In 2001, Below primary appears at age_14_17 (β = +1.82), age_18_21 (β = +2.15), age_22_25 (β = +4.98), age_26_29 (β = +2.42), age_30_33 (β = +0.91). In 2011, it remains at age_22_25 (β = +1.84), age_26_29 (β = not selected), and persists in the childhood brackets. The fact that this predictor spans the full adult control brackets confirms it is a genuine community-level structural deficit — and its survival across the decade confirms it is not resolving <a href="#ref4" class="ref-link">[4]</a>.</p>
+    <p><strong>Below primary (ST F) is the key invariant:</strong> it is selected as a positive predictor across every bracket in both years - including all four adult control brackets. In 2001, Below primary appears at age_14_17 (β = +1.82), age_18_21 (β = +2.15), age_22_25 (β = +4.98), age_26_29 (β = +2.42), age_30_33 (β = +0.91). In 2011, it remains at age_22_25 (β = +1.84), age_26_29 (β = not selected), and persists in the childhood brackets. The fact that this predictor spans the full adult control brackets confirms it is a genuine community-level structural deficit - and its survival across the decade confirms it is not resolving <a href="#ref4" class="ref-link">[4]</a>.</p>
 
     <div class="table-wrap">
       <table>
@@ -1427,22 +1427,22 @@ coefs = dict(<span class="fn">zip</span>(feature_names, final_model.coef_))</cod
     </div>
 
     <h3>Total population: sign reversal in adult brackets validates child-specific effects</h3>
-    <p>The Total population models provide the clearest control-group evidence. In 2001 at <code>age_14_17</code>, CL dropout total female (β = +6.34) and Below primary (β = +1.02) are the dominant risk predictors. In the adult control bracket <code>age_22_25</code> in 2001, Illiteracy flips to β = −5.52 — <em>strongly negative</em>. By 2011, the sign reversal pattern is even clearer: at age_22_25, Illiteracy (β = −3.44), Below primary (β = −0.32), while at the childhood brackets (age_14_17 and age_18_21), Illiteracy is positive (β = +1.08 and +1.94). This directional contrast between child marriage and adult control brackets constitutes the strongest validation in the analysis that the childhood-bracket findings are capturing a genuinely age-specific child marriage mechanism.</p>
+    <p>The Total population models provide the clearest control-group evidence. In 2001 at <code>age_14_17</code>, CL dropout total female (β = +6.34) and Below primary (β = +1.02) are the dominant risk predictors. In the adult control bracket <code>age_22_25</code> in 2001, Illiteracy flips to β = −5.52 - <em>strongly negative</em>. By 2011, the sign reversal pattern is even clearer: at age_22_25, Illiteracy (β = −3.44), Below primary (β = −0.32), while at the childhood brackets (age_14_17 and age_18_21), Illiteracy is positive (β = +1.08 and +1.94). This directional contrast between child marriage and adult control brackets constitutes the strongest validation in the analysis that the childhood-bracket findings are capturing a genuinely age-specific child marriage mechanism.</p>
 
     <h3>Religion models: group-specific predictors, declining power</h3>
     <p>All religion-based models show substantially reduced CV R² between 2001 and 2011. Examining across brackets adds important nuance.</p>
 
-    <p><strong>Muslim Female</strong> is the most stable: Below primary and Illiteracy are consistently selected as positive predictors across <em>all</em> eight age brackets in 2001 — from <code>age_below10</code> through <code>age_34_plus</code>. This means below-primary education is a genuine community-level risk factor for Muslim females that affects marriage at all ages, with the largest coefficient at the core child marriage bracket (age_18_21: β = +2.96 in 2001). In 2011, this pattern attenuates but remains: below-primary selected at <code>age_14_17</code> (β = +2.71) and several adult brackets.</p>
+    <p><strong>Muslim Female</strong> is the most stable: Below primary and Illiteracy are consistently selected as positive predictors across <em>all</em> eight age brackets in 2001 - from <code>age_below10</code> through <code>age_34_plus</code>. This means below-primary education is a genuine community-level risk factor for Muslim females that affects marriage at all ages, with the largest coefficient at the core child marriage bracket (age_18_21: β = +2.96 in 2001). In 2011, this pattern attenuates but remains: below-primary selected at <code>age_14_17</code> (β = +2.71) and several adult brackets.</p>
 
-    <p><strong>Muslim Male</strong> shows a notable 2001→2011 change in the adult brackets: illiteracy is positive across all brackets in 2001 (consistent male illiteracy → higher marriage at all ages). By 2011, illiteracy turns negative at the older adult brackets (age_26_29: β = −4.42; age_30_33: β = −1.82), suggesting that states with high remaining Muslim male illiteracy in 2011 may be those where adult marriage rates are also lower — a composition effect as literacy-equalisation progressed unevenly.</p>
+    <p><strong>Muslim Male</strong> shows a notable 2001→2011 change in the adult brackets: illiteracy is positive across all brackets in 2001 (consistent male illiteracy → higher marriage at all ages). By 2011, illiteracy turns negative at the older adult brackets (age_26_29: β = −4.42; age_30_33: β = −1.82), suggesting that states with high remaining Muslim male illiteracy in 2011 may be those where adult marriage rates are also lower - a composition effect as literacy-equalisation progressed unevenly.</p>
 
-    <p><strong>Christian Female</strong> continues to show the most striking anomaly: at <code>age_14_17</code>, Middle school (β = −4.41) and Below primary (β = −3.31) in 2001 are <em>negative</em> — protective. In 2011 at the same bracket, they flip to positive (Below primary: β = +1.41). Examining adult control brackets across both years: in 2001, Middle school and Below primary show negative associations at age_22_25 through age_34_plus as well, while in 2011 the adult brackets also shift direction. This suggests the sign reversal is <strong>not an artefact of the child marriage bracket</strong> but reflects a genuine geographic composition change — Christian communities are differently distributed across states in 2011 compared to 2001 <a href="#ref3" class="ref-link">[3]</a>.</p>
+    <p><strong>Christian Female</strong> continues to show the most striking anomaly: at <code>age_14_17</code>, Middle school (β = −4.41) and Below primary (β = −3.31) in 2001 are <em>negative</em> - protective. In 2011 at the same bracket, they flip to positive (Below primary: β = +1.41). Examining adult control brackets across both years: in 2001, Middle school and Below primary show negative associations at age_22_25 through age_34_plus as well, while in 2011 the adult brackets also shift direction. This suggests the sign reversal is <strong>not an artefact of the child marriage bracket</strong> but reflects a genuine geographic composition change - Christian communities are differently distributed across states in 2011 compared to 2001 <a href="#ref3" class="ref-link">[3]</a>.</p>
 
-    <p><strong>Hindu Female</strong> simplifies to a single predictor (Illiteracy) by 2011 at <code>age_14_17</code> (β = +2.19), from a richer 2001 model with Middle school, Illiteracy, and Below primary. In the adult control brackets, Hindu female models for 2011 are largely uninformative — most return zero predictors or negative CV R² — consistent with the overall model quality decline for Hindus.</p>
+    <p><strong>Hindu Female</strong> simplifies to a single predictor (Illiteracy) by 2011 at <code>age_14_17</code> (β = +2.19), from a richer 2001 model with Middle school, Illiteracy, and Below primary. In the adult control brackets, Hindu female models for 2011 are largely uninformative - most return zero predictors or negative CV R² - consistent with the overall model quality decline for Hindus.</p>
 
     <div class="callout">
       <strong>💡 The Mechanism Shift</strong>
-      In 2001, keeping a girl in school — even in a working household — was enough to reduce SC/ST marriage probability. By 2011, household-level economic stress had deepened to the point where the <em>dropout</em> signal (girls who have already left school) replaced attendance as the operative risk mechanism. The adult control brackets confirm this is not a generic impoverishment story: the dropout signal is structurally absent in adult brackets (by data design), while education-level predictors that do appear in adult brackets show a very different directional pattern than in the childhood brackets <a href="#ref1" class="ref-link">[1]</a><a href="#ref4" class="ref-link">[4]</a>.
+      In 2001, keeping a girl in school - even in a working household - was enough to reduce SC/ST marriage probability. By 2011, household-level economic stress had deepened to the point where the <em>dropout</em> signal (girls who have already left school) replaced attendance as the operative risk mechanism. The adult control brackets confirm this is not a generic impoverishment story: the dropout signal is structurally absent in adult brackets (by data design), while education-level predictors that do appear in adult brackets show a very different directional pattern than in the childhood brackets <a href="#ref1" class="ref-link">[1]</a><a href="#ref4" class="ref-link">[4]</a>.
     </div>
 
     <div class="table-wrap">
@@ -1450,7 +1450,7 @@ coefs = dict(<span class="fn">zip</span>(feature_names, final_model.coef_))</cod
         <thead><tr><th>Group</th><th>2001 Dominant Predictor (age_14_17)</th><th>β (2001)</th><th>2011 Status</th><th>β (2011)</th></tr></thead>
         <tbody>
           <tr><td>SC Female</td><td>CL attending (SC F)</td><td>−15.16</td><td class="warn">Dropped entirely</td><td>0</td></tr>
-          <tr><td>SC Female (age_18_21)</td><td>—</td><td>—</td><td class="good">New: Dropout, Illiteracy, Below primary</td><td>+4.76, +4.32, +3.49</td></tr>
+          <tr><td>SC Female (age_18_21)</td><td>-</td><td>-</td><td class="good">New: Dropout, Illiteracy, Below primary</td><td>+4.76, +4.32, +3.49</td></tr>
           <tr><td>ST Female</td><td>CL attending (ST F)</td><td>−5.88</td><td>Weakened</td><td>−0.30</td></tr>
           <tr><td>ST Female</td><td>Below primary (ST F)</td><td>+1.82</td><td>Persistent, attenuated</td><td>+0.83</td></tr>
           <tr><td>Total Female</td><td>CL dropout total F</td><td>+6.34</td><td class="warn">Dropped (age_14_17)</td><td>0</td></tr>
@@ -1461,33 +1461,33 @@ coefs = dict(<span class="fn">zip</span>(feature_names, final_model.coef_))</cod
 
     <figure class="blog-figure">
       <img src="lasso_2001_2011_comparison/caste/sc_female_heatmap_2001_vs_2011.png" alt="LASSO coefficients SC Female CMPR 2001 vs 2011">
-      <figcaption><strong>Figure 2 — LASSO coefficients SC Female CMPR 2001 vs 2011</strong> </figcaption>
+      <figcaption><strong>Figure 2 - LASSO coefficients SC Female CMPR 2001 vs 2011</strong> </figcaption>
     </figure>
 
     <figure class="blog-figure">
       <img src="lasso_2001_2011_comparison/caste/sc_male_heatmap_2001_vs_2011.png" alt="LASSO coefficients SC Male CMPR 2001 vs 2011">
-      <figcaption><strong>Figure 3 —</strong> LASSO coefficients SC Male CMPR 2001 vs 2011</figcaption>
+      <figcaption><strong>Figure 3 -</strong> LASSO coefficients SC Male CMPR 2001 vs 2011</figcaption>
     </figure>
 
     <figure class="blog-figure">
       <img src="lasso_2001_2011_comparison/caste/st_female_heatmap_2001_vs_2011.png" alt="LASSO coefficients ST Female CMPR 2001 vs 2011">
-      <figcaption><strong>Figure 4 — LASSO coefficients ST Female CMPR 2001 vs 2011</strong></figcaption>
+      <figcaption><strong>Figure 4 - LASSO coefficients ST Female CMPR 2001 vs 2011</strong></figcaption>
     </figure>
 
     <figure class="blog-figure">
       <img src="lasso_2001_2011_comparison/caste/st_male_heatmap_2001_vs_2011.png" alt="LASSO coefficients ST Male CMPR 2001 vs 2011">
-      <figcaption><strong>Figure 5 — LASSO coefficients ST Male CMPR 2001 vs 2011</strong> </figcaption>
+      <figcaption><strong>Figure 5 - LASSO coefficients ST Male CMPR 2001 vs 2011</strong> </figcaption>
     </figure>
 
     <figure class="blog-figure">
       <img src="lasso_2001_2011_comparison/caste/total_female_heatmap_2001_vs_2011.png" alt="LASSO coefficients Total Female CMPR 2001 vs 2011">
-      <figcaption><strong>Figure 6 — LASSO coefficients Total Female CMPR 2001 vs 2011</strong></figcaption>
+      <figcaption><strong>Figure 6 - LASSO coefficients Total Female CMPR 2001 vs 2011</strong></figcaption>
     </figure>
     </figure>
 
     <figure class="blog-figure">
       <img src="lasso_2001_2011_comparison/caste/total_male_heatmap_2001_vs_2011.png" alt="LASSO coefficients Total Male CMPR 2001 vs 2011">
-      <figcaption><strong>Figure 7 — LASSO coefficients Total Male CMPR 2001 vs 2011</strong> </figcaption>
+      <figcaption><strong>Figure 7 - LASSO coefficients Total Male CMPR 2001 vs 2011</strong> </figcaption>
     </figure>
 
 
@@ -1501,11 +1501,11 @@ coefs = dict(<span class="fn">zip</span>(feature_names, final_model.coef_))</cod
 
   <!-- 8. CLUSTERING -->
   <section id="clustering">
-    <h2><span class="section-num">08 — Clustering</span>Geographic Patterns: State Groupings</h2>
-    <p>To complement the regression analysis, we apply <strong>Ward-linkage hierarchical clustering</strong> on LASSO-selected predictor features for each population group and census year. All models use k = 3 clusters, confirmed by elbow curves. The analysis groups states by CMPR profile at the <code>age_14_17</code> bracket, revealing which states are genuinely similar in their child marriage landscape — and how those groupings shifted over the decade.</p>
+    <h2><span class="section-num">08 - Clustering</span>Geographic Patterns: State Groupings</h2>
+    <p>To complement the regression analysis, we apply <strong>Ward-linkage hierarchical clustering</strong> on LASSO-selected predictor features for each population group and census year. All models use k = 3 clusters, confirmed by elbow curves. The analysis groups states by CMPR profile at the <code>age_14_17</code> bracket, revealing which states are genuinely similar in their child marriage landscape - and how those groupings shifted over the decade.</p>
 
     <h3>SC Female clustering</h3>
-    <p>In 2001, three clusters emerged with well-separated mean CMPRs. The high-burden Cluster 1 (mean CMPR = 36.9) was dominated by Bihar, Jharkhand, Rajasthan, Uttar Pradesh, and West Bengal — the <strong>north + east bloc</strong> — with mean CMPR nearly three times that of the low cluster. Cluster 2 (mean 12.4) was composed almost entirely of southern states and small Union Territories, consistent with the LASSO finding that high female literacy in these states suppresses marriage rates.</p>
+    <p>In 2001, three clusters emerged with well-separated mean CMPRs. The high-burden Cluster 1 (mean CMPR = 36.9) was dominated by Bihar, Jharkhand, Rajasthan, Uttar Pradesh, and West Bengal - the <strong>north + east bloc</strong> - with mean CMPR nearly three times that of the low cluster. Cluster 2 (mean 12.4) was composed almost entirely of southern states and small Union Territories, consistent with the LASSO finding that high female literacy in these states suppresses marriage rates.</p>
 
     <div class="table-wrap">
       <table>
@@ -1518,37 +1518,37 @@ coefs = dict(<span class="fn">zip</span>(feature_names, final_model.coef_))</cod
       </table>
     </div>
 
-    <p>The most important shift: <strong>Uttar Pradesh exited the highest-burden cluster</strong> between 2001 and 2011 — a notable improvement — moving to the middle cluster alongside Odisha and Himachal Pradesh. Bihar, Jharkhand, and Rajasthan remained in Cluster 1 throughout, confirming their status as <strong>structurally resistant high-burden states</strong>.</p>
+    <p>The most important shift: <strong>Uttar Pradesh exited the highest-burden cluster</strong> between 2001 and 2011 - a notable improvement - moving to the middle cluster alongside Odisha and Himachal Pradesh. Bihar, Jharkhand, and Rajasthan remained in Cluster 1 throughout, confirming their status as <strong>structurally resistant high-burden states</strong>.</p>
 
     <h3>ST Female clustering</h3>
-    <p>ST clustering reveals different geographic patterns. In 2001, the northeast states (Mizoram, Manipur, Nagaland, Arunachal Pradesh) and Lakshadweep cluster firmly in the low-CMPR group (mean 11.7), reflecting higher female literacy and different social norms. The high-burden cluster (mean 30.0) is composed entirely of central and eastern mainland states — where the below-primary share identified by LASSO is highest.</p>
+    <p>ST clustering reveals different geographic patterns. In 2001, the northeast states (Mizoram, Manipur, Nagaland, Arunachal Pradesh) and Lakshadweep cluster firmly in the low-CMPR group (mean 11.7), reflecting higher female literacy and different social norms. The high-burden cluster (mean 30.0) is composed entirely of central and eastern mainland states - where the below-primary share identified by LASSO is highest.</p>
 
-    <p>By 2011, the ST cluster structure shifted less favourably than SC: the middle tier <em>converged upward</em>, with more states joining the medium-to-high cluster. This is consistent with the LASSO finding that the ST below-primary predictor barely attenuated — structural educational exclusion persisted, and dropout replaced attendance as the operative risk mechanism.</p>
+    <p>By 2011, the ST cluster structure shifted less favourably than SC: the middle tier <em>converged upward</em>, with more states joining the medium-to-high cluster. This is consistent with the LASSO finding that the ST below-primary predictor barely attenuated - structural educational exclusion persisted, and dropout replaced attendance as the operative risk mechanism.</p>
 
     <h3>Religion-stratified clustering</h3>
-    <p><strong>Hindu:</strong> In 2001, Cluster 1 (mean CMPR 27.3) was anchored by Bihar, Rajasthan, Madhya Pradesh, Jharkhand, UP, and Chhattisgarh — the same high literacy-deficit states identified by LASSO. By 2011, Bihar separated into its own extreme outlier cluster (mean 22.9, only 3 states) driven by Bihar's extraordinarily high Hindu female CMPR.</p>
+    <p><strong>Hindu:</strong> In 2001, Cluster 1 (mean CMPR 27.3) was anchored by Bihar, Rajasthan, Madhya Pradesh, Jharkhand, UP, and Chhattisgarh - the same high literacy-deficit states identified by LASSO. By 2011, Bihar separated into its own extreme outlier cluster (mean 22.9, only 3 states) driven by Bihar's extraordinarily high Hindu female CMPR.</p>
 
     <p><strong>Muslim:</strong> The persistence of Below primary (Muslim F) as the sole LASSO predictor in 2011 (β = +2.71) is reinforced by the clustering: the high-CMPR Muslim cluster is precisely the set of states where Muslim female educational attainment is truncated at below-primary level. States like Mizoram and Nagaland appearing in the high Muslim CMPR group reflects small Muslim population sizes there, making CMPR volatile.</p>
 
-    <p><strong>Christian:</strong> Lakshadweep isolated into its own cluster by 2011 with mean CMPR ≈ 0.0 — effectively no Christian child marriage reported. The sign reversal of Below primary (Christian F) between 2001 and 2011 discussed in Section 7 is visible in how the cluster composition shifts across the decade.</p>
+    <p><strong>Christian:</strong> Lakshadweep isolated into its own cluster by 2011 with mean CMPR ≈ 0.0 - effectively no Christian child marriage reported. The sign reversal of Below primary (Christian F) between 2001 and 2011 discussed in Section 7 is visible in how the cluster composition shifts across the decade.</p>
 
     <h3>Cross-group clustering: the most revealing visualisation</h3>
     <p>The most powerful analysis clusters all 35 states simultaneously on <em>all six female CMPR dimensions</em> (SC F, ST F, Hindu F, Muslim F, Christian F, Total F) for 2011. The result is striking:</p>
 
     <div class="callout">
       <strong>🔑 Key Cross-Group Insight</strong>
-      Cluster 1 states — Bihar, Jharkhand, Madhya Pradesh, Rajasthan, West Bengal, Andhra Pradesh, Tripura — are <strong>uniformly high-CMPR across all religious and caste groups simultaneously</strong>. Bihar shows +2.4 SD for SC female, +2.3 SD for Muslim female, and +1.4 SD for Hindu female in the same row. This means these states are not high-burden in just one community — they are structurally high-burden across the board. The dominant driver is <strong>state-level structural factors</strong> (governance quality, enforcement, poverty, educational infrastructure), not community-specific practices <a href="#ref1" class="ref-link">[1]</a><a href="#ref4" class="ref-link">[4]</a>.
+      Cluster 1 states - Bihar, Jharkhand, Madhya Pradesh, Rajasthan, West Bengal, Andhra Pradesh, Tripura - are <strong>uniformly high-CMPR across all religious and caste groups simultaneously</strong>. Bihar shows +2.4 SD for SC female, +2.3 SD for Muslim female, and +1.4 SD for Hindu female in the same row. This means these states are not high-burden in just one community - they are structurally high-burden across the board. The dominant driver is <strong>state-level structural factors</strong> (governance quality, enforcement, poverty, educational infrastructure), not community-specific practices <a href="#ref1" class="ref-link">[1]</a><a href="#ref4" class="ref-link">[4]</a>.
     </div>
 
-    <p>Cluster 2 — just four states (Daman &amp; Diu, Goa, Kerala, Manipur) — is the low-CMPR outlier group across all dimensions simultaneously. The contrast between these two groups makes the state-level governance argument viscerally clear: the same states that protect SC girls also protect ST girls, Muslim girls, and Hindu girls. Protection is not community-specific; it is environmental.</p>
+    <p>Cluster 2 - just four states (Daman &amp; Diu, Goa, Kerala, Manipur) - is the low-CMPR outlier group across all dimensions simultaneously. The contrast between these two groups makes the state-level governance argument viscerally clear: the same states that protect SC girls also protect ST girls, Muslim girls, and Hindu girls. Protection is not community-specific; it is environmental.</p>
 
     <div class="table-wrap">
       <table>
         <thead><tr><th>Cluster</th><th>Character</th><th>States</th></tr></thead>
         <tbody>
-          <tr><td><strong>Cluster 1 — Universally High</strong></td><td>High CMPR across all 6 dimensions</td><td>AP, Bihar, Jharkhand, MP, Rajasthan, Tripura, West Bengal</td></tr>
-          <tr><td><strong>Cluster 2 — Universally Low</strong></td><td>Low CMPR across all 6 dimensions</td><td>Daman &amp; Diu, Goa, Kerala, Manipur</td></tr>
-          <tr><td><strong>Cluster 3 — Heterogeneous Middle</strong></td><td>Mixed profile; group-specific variation</td><td>Assam, Chhattisgarh, Gujarat, HP, J&amp;K, Karnataka, Maharashtra, Meghalaya, Mizoram, Odisha, Sikkim, TN, UP, Uttarakhand</td></tr>
+          <tr><td><strong>Cluster 1 - Universally High</strong></td><td>High CMPR across all 6 dimensions</td><td>AP, Bihar, Jharkhand, MP, Rajasthan, Tripura, West Bengal</td></tr>
+          <tr><td><strong>Cluster 2 - Universally Low</strong></td><td>Low CMPR across all 6 dimensions</td><td>Daman &amp; Diu, Goa, Kerala, Manipur</td></tr>
+          <tr><td><strong>Cluster 3 - Heterogeneous Middle</strong></td><td>Mixed profile; group-specific variation</td><td>Assam, Chhattisgarh, Gujarat, HP, J&amp;K, Karnataka, Maharashtra, Meghalaya, Mizoram, Odisha, Sikkim, TN, UP, Uttarakhand</td></tr>
         </tbody>
       </table>
     </div>
@@ -1557,17 +1557,17 @@ coefs = dict(<span class="fn">zip</span>(feature_names, final_model.coef_))</cod
 
     <figure class="blog-figure">
       <img src="figures/cluster_1.png" alt="Cross-group female CMPR heatmap 2011">
-      <figcaption><strong>Figure 8 —</strong> Cross-group Female CMPR heatmap, 2011 (35 states × 6 dimensions). States ordered by cluster. Deep red = high CMPR, deep blue = low. Bihar and West Bengal are uniformly red across all columns; Goa and Kerala are uniformly blue — making the state-level structural argument viscerally clear.</figcaption>
+      <figcaption><strong>Figure 8 -</strong> Cross-group Female CMPR heatmap, 2011 (35 states × 6 dimensions). States ordered by cluster. Deep red = high CMPR, deep blue = low. Bihar and West Bengal are uniformly red across all columns; Goa and Kerala are uniformly blue - making the state-level structural argument viscerally clear.</figcaption>
     </figure>
 
     <figure class="blog-figure">
       <img src="figures/cluster_8.png" alt="State clustering dendrogram SC Female 2001">
-      <figcaption><strong>Figure 9 —</strong> Ward-linkage dendrogram, SC Female 2001. The large gap (≈ distance 14) between the Bihar–Jharkhand branch and the rest of the states confirms that the high-burden group is a genuinely discrete cluster, not just the top of a smooth distribution.</figcaption>
+      <figcaption><strong>Figure 9 -</strong> Ward-linkage dendrogram, SC Female 2001. The large gap (≈ distance 14) between the Bihar–Jharkhand branch and the rest of the states confirms that the high-burden group is a genuinely discrete cluster, not just the top of a smooth distribution.</figcaption>
     </figure>
 
     <figure class="blog-figure">
       <img src="figures/cluster_41.png" alt="State profiles heatmap SC Female 2011">
-      <figcaption><strong>Figure 10 —</strong> State profiles heatmap, SC Female 2011. Six LASSO-selected predictor values shown alongside the CMPR bar for each state, colour-coded by cluster. Cluster 1 states (Bihar, Jharkhand, Rajasthan, Meghalaya) are visibly high on Below primary (SC F) and elevated on CL dropout (SC M) — the new 2011 risk signal from Finding 02.</figcaption>
+      <figcaption><strong>Figure 10 -</strong> State profiles heatmap, SC Female 2011. Six LASSO-selected predictor values shown alongside the CMPR bar for each state, colour-coded by cluster. Cluster 1 states (Bihar, Jharkhand, Rajasthan, Meghalaya) are visibly high on Below primary (SC F) and elevated on CL dropout (SC M) - the new 2011 risk signal from Finding 02.</figcaption>
     </figure>
 
     <h3>Clustering insights</h3>
@@ -1575,25 +1575,25 @@ coefs = dict(<span class="fn">zip</span>(feature_names, final_model.coef_))</cod
       <div class="finding">
         <div class="finding-num">Clustering Finding 01</div>
         <h4>UP improved; Bihar–Jharkhand–Rajasthan did not</h4>
-        <p>Uttar Pradesh exited the highest-burden SC cluster between 2001 and 2011 (cluster mean CMPR: 36.9 → 29.3). Bihar, Jharkhand, and Rajasthan remained in Cluster 1 throughout — structurally resistant to the decade's overall progress.</p>
+        <p>Uttar Pradesh exited the highest-burden SC cluster between 2001 and 2011 (cluster mean CMPR: 36.9 → 29.3). Bihar, Jharkhand, and Rajasthan remained in Cluster 1 throughout - structurally resistant to the decade's overall progress.</p>
       </div>
       <div class="finding">
         <div class="finding-num">Clustering Finding 02</div>
         <h4>ST cluster structure worsened 2001 → 2011</h4>
-        <p>Unlike SC, the ST middle tier <em>converged upward</em> — more states joined the medium-to-high cluster by 2011. Consistent with the LASSO finding that the ST below-primary predictor barely attenuated: structural educational exclusion persisted while dropout replaced school attendance as the operative risk pathway.</p>
+        <p>Unlike SC, the ST middle tier <em>converged upward</em> - more states joined the medium-to-high cluster by 2011. Consistent with the LASSO finding that the ST below-primary predictor barely attenuated: structural educational exclusion persisted while dropout replaced school attendance as the operative risk pathway.</p>
       </div>
       <div class="finding">
         <div class="finding-num">Clustering Finding 03</div>
         <h4>High burden is cross-community, not community-specific</h4>
-        <p>Cross-group clustering shows Bihar, Jharkhand, MP, Rajasthan, and West Bengal are simultaneously high across SC, ST, Hindu, Muslim, and Christian CMPR. The dominant driver is state-level structural factors — governance, poverty, educational infrastructure — not any single community's practices.</p>
+        <p>Cross-group clustering shows Bihar, Jharkhand, MP, Rajasthan, and West Bengal are simultaneously high across SC, ST, Hindu, Muslim, and Christian CMPR. The dominant driver is state-level structural factors - governance, poverty, educational infrastructure - not any single community's practices.</p>
       </div>
     </div>
   </section>
 
   <!-- 9. DASHBOARD -->
   <section id="dashboard">
-    <h2><span class="section-num">09 — Dashboard</span>Interactive Exploration</h2>
-    <p>All results are exposed through an interactive web dashboard, designed for non-technical users including NGO staff and policy researchers — no access to raw data or code required.</p>
+    <h2><span class="section-num">09 - Dashboard</span>Interactive Exploration</h2>
+    <p>All results are exposed through an interactive web dashboard, designed for non-technical users including NGO staff and policy researchers - no access to raw data or code required.</p>
 
     <div class="dashboard-box">
       <h4>CMPR Explorer Dashboard</h4>
@@ -1613,28 +1613,28 @@ coefs = dict(<span class="fn">zip</span>(feature_names, final_model.coef_))</cod
 
 
     <h3>Dashboard features</h3>
-    <p>The dashboard exposes five main views. The <strong>choropleth map</strong> colours Indian states by CMPR at a user-selected age bracket, with controls to switch between total population, SC, ST, and religion sub-groups. The <strong>2001 vs. 2011 comparison</strong> renders side-by-side state rankings showing how each state's CMPR changed over the decade. The <strong>LASSO results explorer</strong> visualises which predictors were selected for each group and year, and their relative magnitudes — making the regression findings accessible without any statistical background. A <strong>feature correlation explorer</strong> allows scatter-plot comparison of any two indexes across all 35 states, and a <strong>CSV export</strong> lets analysts download filtered slices for their own analysis.</p>
+    <p>The dashboard exposes five main views. The <strong>choropleth map</strong> colours Indian states by CMPR at a user-selected age bracket, with controls to switch between total population, SC, ST, and religion sub-groups. The <strong>2001 vs. 2011 comparison</strong> renders side-by-side state rankings showing how each state's CMPR changed over the decade. The <strong>LASSO results explorer</strong> visualises which predictors were selected for each group and year, and their relative magnitudes - making the regression findings accessible without any statistical background. A <strong>feature correlation explorer</strong> allows scatter-plot comparison of any two indexes across all 35 states, and a <strong>CSV export</strong> lets analysts download filtered slices for their own analysis.</p>
 
     <p>The integration is tight: findings discussed in this blog correspond directly to views in the dashboard. The claim that "CL dropout (SC M) emerged as a key predictor in 2011" can be verified interactively in the LASSO explorer by selecting the SC Female 2011 model.</p>
   </section>
 
   <!-- 9. LIMITATIONS -->
   <section id="limitations">
-    <h2><span class="section-num">10 — Limitations</span>Caveats</h2>
+    <h2><span class="section-num">10 - Limitations</span>Caveats</h2>
     <p>Honest data science requires surfacing its own blind spots. The key limitations of this analysis are:</p>
 
     <div class="limitations">
       <ol>
         <li><strong>Age band mismatch.</strong> C-02's 5-year bands mean <code>age_10_13</code> includes age 14, and <code>age_14_17</code> excludes it. Some bracket labels are approximations.</li>
         <li><strong>Partial age_18_21 coverage.</strong> In C-08/09/12, ages 20–21 are embedded in the "20–24" band and cannot be extracted, so this bracket covers only ages 18–19 from those sources.</li>
-        <li><strong>C-12 age floor and ceiling.</strong> The school attendance dataset begins at age 5 and ends at age 19; the <code>age_below10</code> bracket covers only ages 5–9, not 0–4. More importantly, child labour and school attendance predictors are structurally absent from all adult control brackets (age_22_25 and above), meaning the adult brackets serve as partial but not perfect controls — they can only validate education-level predictors, not attendance-based ones.</li>
+        <li><strong>C-12 age floor and ceiling.</strong> The school attendance dataset begins at age 5 and ends at age 19; the <code>age_below10</code> bracket covers only ages 5–9, not 0–4. More importantly, child labour and school attendance predictors are structurally absent from all adult control brackets (age_22_25 and above), meaning the adult brackets serve as partial but not perfect controls - they can only validate education-level predictors, not attendance-based ones.</li>
         <li><strong>Adult control brackets have reduced predictor sets.</strong> The four control brackets (age_22_25 through age_34_plus) can only use C-08/C-09 education predictors, whereas the childhood brackets also draw on C-12 school attendance and child labour variables. This structural asymmetry means the adult brackets are more constrained models, and some failure to predict in adult brackets may reflect missing predictors rather than absence of correlation.</li>
-        <li><strong>Small sample size.</strong> With 35 observations per bracket, all models are in a small-n regime. LOO-CV mitigates overfitting, but CV R² values — especially for religion models — should be treated as hypothesis-generating, not confirmatory. The SC male 2011 model (11 predictors, CV R² = 0.166) shows signs of overfitting; its predictor list should not be taken as reliable causal drivers.</li>
+        <li><strong>Small sample size.</strong> With 35 observations per bracket, all models are in a small-n regime. LOO-CV mitigates overfitting, but CV R² values - especially for religion models - should be treated as hypothesis-generating, not confirmatory. The SC male 2011 model (11 predictors, CV R² = 0.166) shows signs of overfitting; its predictor list should not be taken as reliable causal drivers.</li>
         <li><strong>State-level aggregation.</strong> District-level variation, which may be substantial, is not captured. State averages can mask high-prevalence pockets.</li>
         <li><strong>Cross-sectional data.</strong> The 2001–2011 comparison approximates a longitudinal design but does not constitute panel estimation; unobserved time-invariant state characteristics are not controlled for.</li>
         <li><strong>Underreporting.</strong> Child marriage is illegal. Some incidence is almost certainly underreported in census responses; our CMPR values are lower bounds.</li>
-        <li><strong>CMPR as proxy.</strong> "Currently married" captures individuals married at any age who are in that marital state — not necessarily those who married as children.</li>
-        <li><strong>Religion predictors limited to education.</strong> Occupation, income, and urbanisation — likely important for religion-based differences — are not available at the religion × state level in the census sub-tables used. This is the most likely explanation for the sharp CV R² declines in religion models between 2001 and 2011.</li>
+        <li><strong>CMPR as proxy.</strong> "Currently married" captures individuals married at any age who are in that marital state - not necessarily those who married as children.</li>
+        <li><strong>Religion predictors limited to education.</strong> Occupation, income, and urbanisation - likely important for religion-based differences - are not available at the religion × state level in the census sub-tables used. This is the most likely explanation for the sharp CV R² declines in religion models between 2001 and 2011.</li>
         <li><strong>Hindu male 2001 model.</strong> LASSO selected zero predictors (α at upper bound of 100, CV R² = −0.06). This reflects near-zero explainable variance using available predictors, not a model error. Results for this group-year should not be interpreted.</li>
         <li><strong>Christian Below primary sign reversal.</strong> The sign reversal (−4.39 in 2001 → +1.41 in 2011) is interpreted as a composition effect but cannot be confirmed without district-level or longitudinal data.</li>
       </ol>
@@ -1643,24 +1643,24 @@ coefs = dict(<span class="fn">zip</span>(feature_names, final_model.coef_))</cod
 
   <!-- 10. CONCLUSION -->
   <section id="conclusion">
-    <h2><span class="section-num">11 — Conclusion</span>What We Found</h2>
-    <p>This project constructs a comprehensive, multi-dimensional dataset of child marriage rates and their correlates across all Indian states, drawing on 15+ census sub-tables from the 2001 and 2011 waves. By computing CMPR stratified by sex, scheduled status, and religious community, we produce a state-level analytical resource that enables both descriptive comparison and formal regression modelling — and makes it all accessible through an interactive dashboard.</p>
+    <h2><span class="section-num">11 - Conclusion</span>What We Found</h2>
+    <p>This project constructs a comprehensive, multi-dimensional dataset of child marriage rates and their correlates across all Indian states, drawing on 15+ census sub-tables from the 2001 and 2011 waves. By computing CMPR stratified by sex, scheduled status, and religious community, we produce a state-level analytical resource that enables both descriptive comparison and formal regression modelling - and makes it all accessible through an interactive dashboard.</p>
 
     <p>The LASSO analysis and hierarchical clustering together yield eight substantive findings:</p>
 
     <ol class="conclusion-list">
-      <li><strong>Control brackets validate age-specificity of child marriage predictors.</strong> The adult brackets (age_22_25 through age_34_plus) serve as the control group absent from earlier versions of this analysis. For the Total population, illiteracy's coefficient reverses sign from positive (childhood brackets) to negative (adult brackets) — a strong signal that the childhood-bracket findings capture a genuinely age-specific mechanism, not a generic poverty proxy.</li>
+      <li><strong>Control brackets validate age-specificity of child marriage predictors.</strong> The adult brackets (age_22_25 through age_34_plus) serve as the control group absent from earlier versions of this analysis. For the Total population, illiteracy's coefficient reverses sign from positive (childhood brackets) to negative (adult brackets) - a strong signal that the childhood-bracket findings capture a genuinely age-specific mechanism, not a generic poverty proxy.</li>
       <li><strong>SC models: risk window shifted upward by 2011.</strong> The age_14_17 SC female model nearly collapsed by 2011 (CV R² = −0.090), while the age_18_21 model became the strongest of all 2011 SC models (six predictors, CV R² = 0.564). This suggests child marriage risk consolidated at the 18–21 boundary by 2011, consistent with partial legislative compliance where families delay but do not eliminate early marriage.</li>
-      <li><strong>ST models: best predictive fit; below-primary entrenched across all brackets.</strong> ST female 2001 achieved CV R² = 0.705 — the highest in the analysis. CL attending (ST F) at β = −5.88 was the largest coefficient in the childhood analysis. Below-primary (ST F) persists as a positive predictor across all eight age brackets in both years — confirming it is a structural community deficit, not a child-marriage-specific signal.</li>
-      <li><strong>Religion models: group-specific dominant predictors; declining power.</strong> By 2011, each religion reduces to a single predictor. Muslim female below-primary (β = +2.71) is the strongest 2011 religion result. The Christian sign reversal is confirmed across all brackets — including adult control brackets — pointing to geographic composition change as the mechanism.</li>
+      <li><strong>ST models: best predictive fit; below-primary entrenched across all brackets.</strong> ST female 2001 achieved CV R² = 0.705 - the highest in the analysis. CL attending (ST F) at β = −5.88 was the largest coefficient in the childhood analysis. Below-primary (ST F) persists as a positive predictor across all eight age brackets in both years - confirming it is a structural community deficit, not a child-marriage-specific signal.</li>
+      <li><strong>Religion models: group-specific dominant predictors; declining power.</strong> By 2011, each religion reduces to a single predictor. Muslim female below-primary (β = +2.71) is the strongest 2011 religion result. The Christian sign reversal is confirmed across all brackets - including adult control brackets - pointing to geographic composition change as the mechanism.</li>
       <li><strong>Universal coefficient attenuation 2001 → 2011.</strong> Every persistent predictor weakened substantially between waves, reflecting both genuine progress and reduced between-state variance in key predictors. The Total female model's CV R² at age_14_17 fell from 0.440 in 2001 to −0.058 in 2011.</li>
       <li><strong>SC clustering: UP improved; Bihar–Jharkhand–Rajasthan did not.</strong> Uttar Pradesh exited the highest-burden cluster across the decade. Bihar, Jharkhand, and Rajasthan remained in the top cluster throughout both waves.</li>
-      <li><strong>ST clustering: middle tier converged upward.</strong> Unlike SC, more ST states moved into the medium-to-high burden cluster by 2011 — consistent with persistent educational exclusion at the primary level.</li>
+      <li><strong>ST clustering: middle tier converged upward.</strong> Unlike SC, more ST states moved into the medium-to-high burden cluster by 2011 - consistent with persistent educational exclusion at the primary level.</li>
       <li><strong>Cross-group clustering confirms state-level structural burden.</strong> Bihar, Jharkhand, MP, Rajasthan, and West Bengal are simultaneously high-burden across SC, ST, Hindu, Muslim, and Christian CMPR. The dominant explanation is state-level governance and infrastructure failure, not community-specific practices. Goa, Kerala, and Manipur are low across every dimension.</li>
     </ol>
 
     <div class="pullquote">
-      "Protection is not community-specific — it is environmental. The same states that protect SC girls also protect ST girls, Muslim girls, and Hindu girls."
+      "Protection is not community-specific - it is environmental. The same states that protect SC girls also protect ST girls, Muslim girls, and Hindu girls."
     </div>
 
     <p>The analysis is complemented by an interactive dashboard at <a href="https://project-bachpan.vercel.app" target="_blank">project-bachpan.vercel.app</a> that visualises CMPR patterns across states, brackets, and sub-groups for non-technical audiences, and exposes the LASSO coefficient comparisons and clustering results as an explorable interface.</p>
@@ -1668,7 +1668,7 @@ coefs = dict(<span class="fn">zip</span>(feature_names, final_model.coef_))</cod
 
   <!-- REFERENCES -->
   <section id="references">
-    <h2><span class="section-num">12 — References</span>Sources &amp; Further Reading</h2>
+    <h2><span class="section-num">12 - References</span>Sources &amp; Further Reading</h2>
     <div class="ref-list">
       <div class="ref-item" id="ref1">
         <span class="ref-num">[1]</span>
@@ -1701,7 +1701,7 @@ coefs = dict(<span class="fn">zip</span>(feature_names, final_model.coef_))</cod
       <div class="ref-item" id="ref5">
         <span class="ref-num">[5]</span>
         <div class="ref-body">
-          World Bank. "GDP growth (annual %) — India," 2026. <em>World Development Indicators, Open Data</em>.
+          World Bank. "GDP growth (annual %) - India," 2026. <em>World Development Indicators, Open Data</em>.
           <a href="https://data.worldbank.org/indicator/NY.GDP.MKTP.KD.ZG?locations=IN" target="_blank" rel="noopener" class="ref-doi">data.worldbank.org ↗</a>
         </div>
       </div>

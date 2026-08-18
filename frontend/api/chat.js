@@ -1,5 +1,5 @@
 /**
- * Vercel function entry (must be .js/.ts — Vercel does not treat .cjs as a
+ * Vercel function entry (must be .js/.ts - Vercel does not treat .cjs as a
  * Serverless Function, so `functions["api/chat.cjs"]` fails the pattern check).
  *
  * api/package.json sets "type": "commonjs" so this file can require() even when

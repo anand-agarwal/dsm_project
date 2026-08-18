@@ -8,8 +8,20 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
-import { Maximize2, Minimize2, Sparkles, X } from "lucide-react";
+import { Maximize2, Minimize2, X } from "lucide-react";
+import { useRouterState } from "@tanstack/react-router";
+import type { UIMessage } from "ai";
 import { CensusChat } from "@/components/CensusChat";
+import { TathyaMark } from "@/components/TathyaMark";
+import { AGENT_NAME, AGENT_SUBLINE, AGENT_TAGLINE } from "@/agent/identity";
+import {
+  loadActiveThreadId,
+  loadTathyaThreads,
+  restoreActiveThreadId,
+  saveActiveThreadId,
+  saveTathyaThreads,
+  upsertTathyaThread,
+} from "@/lib/tathyaThreads";
 
 const MIN_W = 320;
 const DEFAULT_W = 420;
@@ -33,11 +45,6 @@ export function useAgentChat() {
 
 export function AgentChatProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
-  useEffect(() => {
-    if (typeof window !== "undefined" && window.location.hash === "#ask") {
-      setOpen(true);
-    }
-  }, []);
   return (
     <AgentChatContext.Provider value={{ open, setOpen }}>
       {children}
@@ -57,6 +64,7 @@ function expandedPanelWidth() {
 
 export function AgentDrawer() {
   const { open, setOpen } = useAgentChat();
+  const onAskPage = useRouterState({ select: (s) => s.location.pathname === "/ask" });
   const [width, setWidth] = useState(DEFAULT_W);
   const [expanded, setExpanded] = useState(false);
   const widthRef = useRef(width);
@@ -138,23 +146,25 @@ export function AgentDrawer() {
     persistWidth(nextW, next);
   };
 
+  if (onAskPage) return null;
+
   return (
     <>
       {!open && (
         <button
           type="button"
           onClick={() => setOpen(true)}
-          aria-label="Open census chat"
-          className="fixed bottom-6 right-6 z-40 h-14 w-14 rounded-full bg-ink text-paper shadow-[0_12px_28px_oklch(0.25_0.03_50_/_0.28)] flex items-center justify-center hover:scale-105 hover:opacity-95 transition-transform"
+          aria-label={`Open ${AGENT_NAME}`}
+          className="fixed bottom-6 right-6 z-40 h-14 w-14 rounded-full bg-white shadow-[0_12px_28px_oklch(0.25_0.03_50_/_0.28)] flex items-center justify-center hover:scale-105 hover:opacity-95 transition-transform p-1"
         >
-          <Sparkles className="h-6 w-6" strokeWidth={1.75} />
+          <TathyaMark pose="idle" size={48} decorative={false} />
         </button>
       )}
 
       {open && (
         <button
           type="button"
-          aria-label="Close agent"
+          aria-label={`Close ${AGENT_NAME}`}
           className="fixed inset-0 z-40 bg-ink/10"
           onClick={() => setOpen(false)}
         />
@@ -181,9 +191,12 @@ export function AgentDrawer() {
           className="absolute left-0 top-0 z-10 h-full w-3 cursor-col-resize touch-none"
         />
         <div className="flex items-center justify-between gap-3 px-5 pt-4 pb-3">
-          <div className="min-w-0">
-            <div className="eyebrow">Census agent</div>
-            <div className="font-display text-[1.35rem] leading-tight text-ink">Ask the tables</div>
+          <div className="flex items-center gap-3 min-w-0">
+            <TathyaMark pose="idle" size={44} />
+            <div className="min-w-0">
+              <div className="eyebrow">{AGENT_NAME}</div>
+              <div className="font-display text-[1.35rem] leading-tight text-ink">{AGENT_TAGLINE}</div>
+            </div>
           </div>
           <div className="flex items-center gap-0.5 shrink-0 rounded-full bg-white/70 p-0.5 shadow-sm">
             <button
@@ -204,13 +217,41 @@ export function AgentDrawer() {
             </button>
           </div>
         </div>
-        <p className="px-5 pb-2 text-xs text-subtle">
-          2001 and 2011 C-series · rates from Postgres
-        </p>
+        <p className="px-5 pb-2 text-xs text-subtle">{AGENT_SUBLINE}</p>
         <div className="flex-1 min-h-0 flex flex-col">
-          <CensusChat />
+          <PersistedDrawerChat />
         </div>
       </aside>
     </>
+  );
+}
+
+function PersistedDrawerChat() {
+  const [ready, setReady] = useState(false);
+  const [chatId, setChatId] = useState("");
+  const [initialMessages, setInitialMessages] = useState<UIMessage[]>([]);
+
+  useEffect(() => {
+    const loaded = loadTathyaThreads();
+    const id = restoreActiveThreadId(loaded, loadActiveThreadId()) ?? crypto.randomUUID();
+    saveActiveThreadId(id);
+    setChatId(id);
+    setInitialMessages(loaded.find((t) => t.id === id)?.messages ?? []);
+    setReady(true);
+  }, []);
+
+  const onMessagesChange = useCallback((messages: UIMessage[]) => {
+    if (!chatId) return;
+    saveTathyaThreads(upsertTathyaThread(loadTathyaThreads(), chatId, messages));
+  }, [chatId]);
+
+  if (!ready || !chatId) return null;
+  return (
+    <CensusChat
+      chatId={chatId}
+      layout="drawer"
+      initialMessages={initialMessages}
+      onMessagesChange={onMessagesChange}
+    />
   );
 }

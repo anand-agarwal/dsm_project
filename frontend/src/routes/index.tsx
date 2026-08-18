@@ -20,9 +20,9 @@ import geojson from "@/data/india-states.geojson.json";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Bachpan — A child-marriage atlas of India (2001 & 2011)" },
+      { title: "Bachpan - A child-marriage atlas of India (2001 & 2011)" },
       { name: "description", content: "Explore child marriage prevalence, literacy and dropout across Indian states using Census 2001 & 2011 data." },
-      { property: "og:title", content: "Bachpan — A child-marriage atlas of India" },
+      { property: "og:title", content: "Bachpan - A child-marriage atlas of India" },
       { property: "og:description", content: "State-by-state CMPR, education and economic indicators from Census 2001 & 2011." },
     ],
   }),

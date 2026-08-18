@@ -1,7 +1,10 @@
-import { useMemo, useState, type FormEvent, type ReactNode } from "react";
-import { ArrowUp, Sparkles } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { ArrowUp } from "lucide-react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, isTextUIPart, isToolUIPart, type UIMessage } from "ai";
+import { AGENT_NAME_HI } from "@/agent/identity";
+import { TathyaMark } from "@/components/TathyaMark";
+import { messagesSignature } from "@/lib/tathyaThreads";
 import { matchResearchSource } from "@/agent/researchSources";
 
 const chatTransport = new DefaultChatTransport({ api: "/api/chat" });
@@ -82,19 +85,39 @@ function toolPills(message: UIMessage): Array<{ label: string; tone: "busy" | "d
   });
 }
 
-const PILL: Record<"busy" | "done" | "error" | "you", string> = {
-  busy: "bg-edu-50 text-edu-700",
-  done: "bg-[oklch(0.95_0.03_150)] text-tea",
-  error: "bg-cmpr-50 text-cmpr-700",
-  you: "bg-secondary text-subtle",
+type CensusChatProps = {
+  chatId?: string;
+  initialMessages?: UIMessage[];
+  onMessagesChange?: (messages: UIMessage[]) => void;
+  layout?: "drawer" | "page";
 };
 
-export function CensusChat() {
+export function CensusChat({
+  chatId,
+  initialMessages,
+  onMessagesChange,
+  layout = "drawer",
+}: CensusChatProps) {
   const [draft, setDraft] = useState("");
+  const primed = useRef(initialMessages);
+  const persist = useRef(onMessagesChange);
+  persist.current = onMessagesChange;
+  const lastSaved = useRef(messagesSignature(primed.current ?? []));
+
   const { messages, sendMessage, status, error, stop } = useChat({
+    id: chatId,
+    messages: primed.current ?? [],
     transport: chatTransport,
   });
   const busy = status === "submitted" || status === "streaming";
+
+  useEffect(() => {
+    if (!persist.current || busy || messages.length === 0) return;
+    const signature = messagesSignature(messages);
+    if (signature === lastSaved.current) return;
+    lastSaved.current = signature;
+    persist.current(messages);
+  }, [messages, busy]);
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -107,40 +130,55 @@ export function CensusChat() {
   const examples = useMemo(
     () => [
       { title: "SC literacy, Odisha", body: "What is the literacy in Odisha for SC girls?" },
-      { title: "ST currently married", body: "Currently married share for ST females in Rajasthan, 2011" },
+      { title: "Census 2026", body: "How is the Census of India progressing in 2026?" },
       { title: "School attendance", body: "School attendance among SC children in Bihar" },
     ],
     [],
   );
 
+  const page = layout === "page";
+  const col = page ? "max-w-[720px] mx-auto w-full" : "";
+  const lastAssistantId = [...messages].reduce<string | undefined>(
+    (id, msg) => (msg.role === "assistant" ? msg.id : id),
+    undefined,
+  );
+
   return (
     <div className="flex flex-col h-full min-h-0 font-body">
-      <div className="px-5 py-4 flex-1 min-h-0 overflow-y-auto space-y-3">
+      <div className={`px-5 py-4 flex-1 min-h-0 overflow-y-auto space-y-4 ${page ? "px-6 md:px-10" : ""}`}>
         {messages.length === 0 && (
-          <div className="flex flex-col gap-3">
-            <p className="eyebrow">Try a question</p>
+          <div className={`flex flex-col gap-3 ${col}`}>
+            {page && (
+              <div className="pt-6 pb-4 text-center">
+                <div className="eyebrow mb-3">Social infographics · India</div>
+                <div className="flex flex-col items-center justify-center gap-2">
+                  <TathyaMark pose="wave" size={88} decorative={false} />
+                  <h1
+                    className="brand-hi text-5xl md:text-6xl font-semibold text-ink"
+                    lang="hi"
+                    aria-hidden
+                  >
+                    {AGENT_NAME_HI}
+                  </h1>
+                </div>
+                <p className="mt-3 text-sm text-subtle leading-relaxed max-w-[42ch] mx-auto">
+                  Census C-series rates from the database (2001 and 2011 today), and live search for news, policy, and later census rounds.
+                </p>
+              </div>
+            )}
+            <p className={`eyebrow ${page ? "text-center" : ""}`}>Try a question</p>
             {examples.map((q) => (
               <button
                 key={q.body}
                 type="button"
-                className="census-chat-card text-left px-5 py-4 hover:brightness-[0.99] transition"
+                className="census-chat-card text-left px-4 py-3 hover:opacity-90 transition"
                 onClick={() => {
                   setDraft("");
                   void sendMessage({ text: q.body });
                 }}
               >
-                <div className="flex items-center gap-2 mb-1.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-edu-500" />
-                  <span className="font-display text-[15px] text-ink leading-tight">{q.title}</span>
-                </div>
-                <p className="text-sm text-subtle leading-relaxed">{q.body}</p>
-                <div className="mt-3 flex items-center justify-between">
-                  <span className={`text-[10px] font-semibold tracking-wide uppercase px-2 py-0.5 rounded-full ${PILL.you}`}>
-                    Census
-                  </span>
-                  <span className="text-xs text-subtle">Open →</span>
-                </div>
-                <div className="mt-3 h-0.5 rounded-full bg-edu-300/80" />
+                <div className="text-sm font-medium text-ink">{q.title}</div>
+                <p className="mt-0.5 text-sm text-subtle leading-relaxed">{q.body}</p>
               </button>
             ))}
           </div>
@@ -149,60 +187,70 @@ export function CensusChat() {
           const text = textOf(m);
           const tools = toolPills(m);
           const mine = m.role === "user";
-          if (!text && tools.length === 0) return null;
+          const thinking = busy && !mine && m.id === lastAssistantId;
+          if (!text && tools.length === 0 && !thinking) return null;
           return (
-            <article key={m.id} className="census-chat-card px-5 pt-4 pb-3">
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${mine ? "bg-edu-500" : "bg-tea"}`} />
-                  <span className="font-display text-[15px] text-ink leading-tight">
-                    {mine ? "You" : "Census agent"}
-                  </span>
-                </div>
-                <span className={`text-[10px] font-semibold tracking-wide uppercase px-2 py-0.5 rounded-full ${mine ? PILL.you : PILL.done}`}>
-                  {mine ? "Query" : "Reply"}
-                </span>
-              </div>
-              {tools.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mb-2">
-                  {tools.map((t) => (
-                    <span
-                      key={t.label}
-                      className={`text-[10px] font-semibold tracking-wide uppercase px-2 py-0.5 rounded-full ${PILL[t.tone]}`}
-                    >
-                      {t.label}
-                    </span>
-                  ))}
-                </div>
+            <div
+              key={m.id}
+              className={`flex gap-2.5 ${col} ${mine ? "justify-end" : "justify-start"}`}
+            >
+              {!mine && (
+                <TathyaMark
+                  pose={thinking ? "think" : "idle"}
+                  size={28}
+                  animate={thinking}
+                  className="mt-0.5"
+                />
               )}
-              {text ? (
-                <div className="text-sm text-[oklch(0.38_0.02_60)] whitespace-pre-wrap leading-relaxed">
-                  {renderMessageText(text)}
-                </div>
-              ) : null}
-              <div className={`mt-3 h-0.5 rounded-full ${mine ? "bg-edu-400" : "bg-tea/70"}`} />
-            </article>
+              <div className="min-w-0 max-w-[85%]">
+                {tools.length > 0 && (
+                  <p className="mb-1 text-[11px] text-subtle">
+                    {tools.map((t) => t.label).join(" · ")}
+                  </p>
+                )}
+                {text ? (
+                  <div
+                    className={
+                      mine
+                        ? "rounded-2xl rounded-br-md bg-ink text-paper px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-wrap"
+                        : "rounded-2xl rounded-bl-md bg-white text-ink px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-wrap shadow-[0_8px_24px_oklch(0.35_0.03_50_/_0.07)]"
+                    }
+                  >
+                    {renderMessageText(text)}
+                  </div>
+                ) : thinking ? (
+                  <div className="rounded-2xl rounded-bl-md bg-white px-3.5 py-2.5 text-sm text-subtle shadow-[0_8px_24px_oklch(0.35_0.03_50_/_0.07)]">
+                    Looking that up…
+                  </div>
+                ) : null}
+              </div>
+            </div>
           );
         })}
-        {busy && (
-          <div className="flex items-center gap-2 px-1 text-xs text-subtle">
-            <Sparkles className="h-3.5 w-3.5 animate-pulse" />
-            Looking up Census tables…
+        {busy && messages[messages.length - 1]?.role !== "assistant" && (
+          <div className={`flex gap-2.5 justify-start ${col}`}>
+            <TathyaMark pose="think" size={28} className="mt-0.5" />
+            <div className="rounded-2xl rounded-bl-md bg-white px-3.5 py-2.5 text-sm text-subtle shadow-[0_8px_24px_oklch(0.35_0.03_50_/_0.07)]">
+              Looking that up…
+            </div>
           </div>
         )}
         {error && (
-          <div className="census-chat-card px-5 py-4 text-sm text-cmpr-700">
-            {error.message}. Set HF_TOKEN in frontend/.env.local (server-only) and restart Vite.
+          <div className={`census-chat-card px-5 py-4 text-sm text-cmpr-700 ${col}`}>
+            {error.message}
+            {/HF_TOKEN|Hugging Face/i.test(error.message)
+              ? " Add HF_TOKEN to frontend/.env.local (server-only) and restart Vite."
+              : null}
           </div>
         )}
       </div>
 
-      <form onSubmit={onSubmit} className="px-5 pb-5 pt-1">
-        <div className="census-chat-card flex items-end gap-2 px-3 py-2">
+      <form onSubmit={onSubmit} className={`px-5 pb-5 pt-1 ${page ? "px-6 md:px-10" : ""}`}>
+        <div className={`census-chat-card flex items-end gap-2 px-3 py-2 ${col}`}>
           <input
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            placeholder="Ask about Census 2001 or 2011…"
+            placeholder="Ask about India - Census tables or the latest news…"
             className="flex-1 bg-transparent px-2 py-2 text-sm text-ink placeholder:text-subtle outline-none"
             disabled={busy}
           />

@@ -15,7 +15,7 @@ import { STATES, stateFromSlug } from "@/data/states";
 export const Route = createFileRoute("/state/$slug")({
   head: ({ params }) => {
     const s = stateFromSlug(params.slug);
-    const title = s ? `${s.name} — Census child-marriage dossier` : "State dossier";
+    const title = s ? `${s.name} - Census child-marriage dossier` : "State dossier";
     return {
       meta: [
         { title },
@@ -152,7 +152,7 @@ function SectionA({ stateName, year }: { stateName: string; year: Year }) {
             </LineChart>
           </ResponsiveContainer>
         </Card>
-        <Card title="2001 vs 2011 — female cohort">
+        <Card title="2001 vs 2011 - female cohort">
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={compare} margin={{ left: -10, right: 8, top: 8, bottom: 0 }}>
               <CartesianGrid stroke="var(--color-rule)" vertical={false} />
@@ -332,7 +332,7 @@ function SectionE({ stateName, year }: { stateName: string; year: Year }) {
   const buckets = schoolingSplit(stateName, year, "female").map((r) => r.bucket);
   const COLORS = ["var(--color-edu-700)", "var(--color-saffron)", "var(--color-cmpr-500)", "var(--color-cmpr-900)"];
 
-  // Worker × attendance — small table-ish stacked bar
+  // Worker × attendance - small table-ish stacked bar
   const workerAttendance = WORKER_CATEGORIES.map((w) => {
     const att = 100 - (cmprByWorker(stateName, year, "female").find((x) => x.worker === w)?.cmpr ?? 0) - 5;
     return {
