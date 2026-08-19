@@ -2,7 +2,7 @@ import { z } from "zod";
 import { tool } from "ai";
 import { METRIC_IDS } from "./types";
 import { formatLookupSchemaForModel, lookupSchema } from "./lookupSchema";
-import { formatCensusQueryForModel, runCensusQuery } from "./runCensusQuery";
+import { censusYearInputSchema, formatCensusQueryForModel, runCensusQuery } from "./runCensusQuery";
 import { formatSearchResearchForModel, searchResearch } from "./searchResearch";
 
 const socialGroupSchema = z.enum(["total", "sc", "st", "religion"]);
@@ -31,7 +31,9 @@ export const censusAgentTools = {
         .string()
         .optional()
         .describe("Catalog id from lookup_schema, e.g. c08_sc. Optional if metric + socialGroup are set."),
-      year: z.enum(["2001", "2011"]).describe("Census year. Use 2001 or 2011 only."),
+      year: censusYearInputSchema.describe(
+        "Census year 2001 or 2011. JSON number or string is accepted.",
+      ),
       state: z
         .string()
         .min(1)

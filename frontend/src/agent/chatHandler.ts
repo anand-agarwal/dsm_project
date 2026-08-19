@@ -35,7 +35,7 @@ Census query rules (run_census_query):
 - Omit ageBand unless the user named an age. Default is All ages. Do not put ST/SC/female/married into ageBand.
 - When you report a rate, quote the percentage AND the numerator/denominator AND year, area (Total/Rural/Urban), sex, social group, and age band.
 - If a tool returns ok:false or 0 rows, quote the tool error/hint. Do not invent causes such as a missing table or a "State - NAME" format mismatch.
-- Tool arguments must be a single compact JSON object. year is exactly "2001" or "2011". Do not put reasoning, markdown, or comments inside tool arguments.
+- Tool arguments must be a single compact JSON object. year is 2001 or 2011 (number or string). Do not put reasoning, markdown, or comments inside tool arguments.
 
 Refuse only questions unrelated to India social statistics, demography, education, gender, caste/tribe, religion, child marriage, public health context, or related policy and data.`;
 
