@@ -1,5 +1,4 @@
 import { Outlet, Link, createRootRoute, HeadContent } from "@tanstack/react-router";
-import { AgentChatProvider, AgentDrawer } from "@/components/AgentDrawer";
 
 import appCss from "../styles.css?url";
 
@@ -57,10 +56,9 @@ export const Route = createRootRoute({
 
 function RootComponent() {
   return (
-    <AgentChatProvider>
+    <>
       <HeadContent />
       <Outlet />
-      <AgentDrawer />
-    </AgentChatProvider>
+    </>
   );
 }
