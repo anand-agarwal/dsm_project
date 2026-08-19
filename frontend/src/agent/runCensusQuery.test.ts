@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { resolveAgeLabels } from "./ageBrackets";
 import {
+  censusYearInputSchema,
   compileCensusQuery,
   computeMetricFromRows,
   computeRate,
@@ -9,6 +10,16 @@ import {
   resolveCensusState,
   runCensusQuery,
 } from "./runCensusQuery";
+
+describe("censusYearInputSchema", () => {
+  it("accepts JSON number or string years", () => {
+    expect(censusYearInputSchema.parse(2011)).toBe(2011);
+    expect(censusYearInputSchema.parse("2011")).toBe("2011");
+    expect(censusYearInputSchema.parse(2001)).toBe(2001);
+    expect(censusYearInputSchema.parse("2001")).toBe("2001");
+    expect(() => censusYearInputSchema.parse(2021)).toThrow();
+  });
+});
 
 describe("resolveCensusState", () => {
   it("maps Orissa to ODISHA search token", () => {

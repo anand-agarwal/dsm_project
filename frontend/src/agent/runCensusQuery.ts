@@ -38,11 +38,17 @@ const DEFAULT_CARD: Record<MetricId, Partial<Record<SocialGroup | "religion", st
   population: { total: "c08_total", sc: "c08_sc", st: "c08_st", religion: "c09_religion" },
 };
 
+/** Model tool calls send year as a JSON number or string; both are valid. */
+export const censusYearInputSchema = z.union([
+  z.literal(2001),
+  z.literal(2011),
+  z.literal("2001"),
+  z.literal("2011"),
+]);
+
 export const censusQueryDslSchema = z.object({
   cardId: z.string().min(1).optional(),
-  year: z.union([z.literal(2001), z.literal(2011), z.literal("2001"), z.literal("2011")]).transform(
-    (v) => Number(v) as Year,
-  ),
+  year: censusYearInputSchema.transform((v) => Number(v) as Year),
   state: z.string().min(1),
   area: z.enum(["Total", "Rural", "Urban"]).default("Total"),
   sex: z.enum(["persons", "male", "female"]).default("female"),
