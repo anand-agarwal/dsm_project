@@ -1,10 +1,4 @@
 {
-  "functions": {
-    "api/chat.js": {
-      "maxDuration": 60,
-      "includeFiles": "api/_handler.cjs"
-    }
-  },
   "rewrites": [
     {
       "source": "/((?!api(?:/|$)|.*\\.).*)",

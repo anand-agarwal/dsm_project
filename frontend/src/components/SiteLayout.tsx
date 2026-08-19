@@ -1,7 +1,5 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { ArrowLeft, ArrowUpRight } from "lucide-react";
-import { AGENT_NAME } from "@/agent/identity";
 
 export function SiteLayout({
   children,
@@ -12,8 +10,6 @@ export function SiteLayout({
   footer?: boolean;
   fill?: boolean;
 }) {
-  const onAsk = useRouterState({ select: (s) => s.location.pathname === "/ask" });
-
   return (
     <div className={`${fill ? "h-dvh overflow-hidden" : "min-h-screen"} flex flex-col text-foreground`}>
       <header className="border-b border-rule/80 shrink-0">
@@ -50,23 +46,6 @@ export function SiteLayout({
             >
               Blog
             </Link>
-            {onAsk ? (
-              <Link
-                to="/"
-                className="ml-1 inline-flex items-center gap-1.5 rounded-full bg-ink px-3.5 py-1.5 text-sm font-medium text-paper hover:opacity-90"
-              >
-                <ArrowLeft className="h-3.5 w-3.5" strokeWidth={2.2} />
-                Back to Atlas
-              </Link>
-            ) : (
-              <Link
-                to="/ask"
-                className="ml-1 inline-flex items-center gap-1.5 rounded-full bg-ink px-3.5 py-1.5 text-sm font-medium text-paper hover:opacity-90"
-              >
-                Ask {AGENT_NAME}
-                <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.2} />
-              </Link>
-            )}
           </nav>
         </div>
       </header>
